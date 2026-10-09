@@ -84,4 +84,6 @@ For local development, copy `backend/.env.example` to `backend/.env` and set `DA
 
 The API checks the database connection before listening and exposes `GET /health` as a database health check. Citizen registration and login are available at `POST /api/auth/register` and `POST /api/auth/login`.
 
+Before enabling citizen queue booking on an existing database, run `backend/src/db/migrations/001_queue_booking_metadata.sql` once against the Render PostgreSQL database. It ensures the office-level `buffer_time_minutes` column exists and creates the employee holiday table used to disable booking on holiday dates.
+
 On Render, add `DATABASE_URL`, `DB_SSL=true`, `JWT_SECRET`, and `CORS_ORIGINS` to the backend web service. `CORS_ORIGINS` must include the deployed frontend origin. Set the frontend's `VITE_API_URL` to the backend service origin and rebuild/redeploy the frontend after changing it. Use `npm start` as the backend start command.
