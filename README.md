@@ -47,7 +47,7 @@ Government offices often run several service counters at once, each with a diffe
 
 ## Project Status
 
-This repository is an early scaffold. The frontend currently contains a minimal React starter view, and the backend entry-point files are not implemented yet. The features above describe the product direction; they should not be considered available until implemented and tested. In particular, production geofencing requires clear consent, limited location collection, secure handling, and an accessible alternative for citizens who cannot use location services.
+Currently under development
 
 ## Development Setup
 
