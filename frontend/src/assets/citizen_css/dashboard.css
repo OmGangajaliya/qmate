@@ -192,3 +192,89 @@
 @media (prefers-reduced-motion: reduce) {
 	.citizen-dashboard *, .citizen-dashboard *::before, .citizen-dashboard *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
 }
+
+.citizen-dashboard { min-height: 100vh; padding: 0; }
+.citizen-sidebar { position: fixed; z-index: 20; inset: 0 auto 0 0; display: flex; width: 258px; flex-direction: column; padding: 27px 17px 18px; border-right: 1px solid #eee8e1; background: rgba(255, 253, 251, 0.96); }
+.citizen-sidebar > .dashboard-brand { margin: 0 0 48px 9px; }
+.citizen-side-nav { display: grid; align-content: start; gap: 5px; }
+.sidebar-group-label { margin: 0 0 8px 12px; color: #a69b91; font-size: 10px; font-weight: 700; letter-spacing: 1.15px; }
+.sidebar-link { display: flex; width: 100%; min-height: 46px; align-items: center; gap: 12px; padding: 0 12px; border: 0; border-radius: 8px; background: transparent; color: #776e66; cursor: pointer; font: 600 14px 'DM Sans', sans-serif; text-align: left; text-decoration: none; transition: background 150ms ease, color 150ms ease; }
+.sidebar-link > i:first-child { width: 19px; color: #a99b8e; font-size: 15px; text-align: center; }
+.sidebar-link:hover, .sidebar-link.is-active { background: #fff0e3; color: #c96735; }
+.sidebar-link:hover > i:first-child, .sidebar-link.is-active > i:first-child { color: #d47740; }
+.sidebar-service-toggle { font-size: 14px; }
+.sidebar-service-toggle span { flex: 1; }
+.sidebar-chevron { margin-left: auto; color: #a99b8e; font-size: 11px; transition: transform 150ms ease; }
+.sidebar-chevron.is-open { transform: rotate(180deg); }
+.sidebar-subnav { display: grid; gap: 3px; margin: 0 0 5px 22px; padding-left: 15px; border-left: 1px solid #eaded3; }
+.sidebar-sublink { display: flex; min-height: 38px; align-items: center; padding: 0 10px; border-radius: 7px; color: #81786f; font-size: 13px; font-weight: 500; text-decoration: none; transition: color 150ms ease, background 150ms ease; }
+.sidebar-sublink:hover, .sidebar-sublink.is-active { background: #fff6ee; color: #c96735; }
+.sidebar-bottom { display: grid; gap: 14px; margin-top: auto; padding-top: 17px; border-top: 1px solid #eee8e1; }
+.sidebar-account { display: flex; align-items: center; gap: 11px; padding: 0 8px; }
+.sidebar-account > span:last-child { display: grid; gap: 3px; }
+.sidebar-account strong { color: #51473e; font-size: 13px; font-weight: 600; }
+.sidebar-account small { color: #a0978e; font-size: 11px; }
+.sidebar-logout { color: #847970; }
+.dashboard-workspace { min-height: 100vh; margin-left: 258px; }
+.dashboard-workspace .dashboard-main { width: min(1180px, calc(100% - 72px)); padding-top: 45px; }
+.dashboard-workspace .dashboard-footer { width: min(1180px, calc(100% - 72px)); margin-bottom: 22px; }
+.dashboard-mobile-header { display: none; }
+.sidebar-backdrop { display: none; }
+
+@media (max-width: 900px) {
+	.citizen-sidebar { width: 230px; }
+	.dashboard-workspace { margin-left: 230px; }
+	.dashboard-workspace .dashboard-main, .dashboard-workspace .dashboard-footer { width: calc(100% - 48px); }
+	.dashboard-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	.dashboard-stat--note { grid-column: 1 / -1; }
+	.dashboard-content-grid { grid-template-columns: 1fr; }
+	.next-step-panel { min-height: 300px; }
+}
+
+@media (max-width: 700px) {
+	.citizen-dashboard { padding: 0 0 calc(18px + env(safe-area-inset-bottom)); }
+	.citizen-sidebar { z-index: 32; width: min(290px, calc(100vw - 48px)); padding: 23px 16px 17px; box-shadow: 16px 0 45px rgba(55, 41, 30, 0.12); transform: translateX(-110%); transition: transform 220ms ease; }
+	.citizen-sidebar.is-open { transform: translateX(0); }
+	.citizen-sidebar > .dashboard-brand { margin: 0 0 39px 8px; }
+	.sidebar-backdrop { position: fixed; z-index: 30; inset: 0; display: block; border: 0; background: rgba(42, 34, 27, 0.3); backdrop-filter: blur(2px); }
+	.dashboard-workspace { margin-left: 0; }
+	.dashboard-mobile-header { position: sticky; z-index: 8; top: 0; display: flex; min-height: 62px; align-items: center; gap: 13px; padding: 0 18px; border-bottom: 1px solid rgba(238, 232, 225, 0.85); background: rgba(255, 253, 251, 0.93); color: #50463d; font: 700 15px 'Manrope', sans-serif; backdrop-filter: blur(16px); }
+	.mobile-menu-button { display: grid; width: 37px; aspect-ratio: 1; place-items: center; border: 1px solid #eee5dc; border-radius: 9px; background: white; color: #b96739; cursor: pointer; font-size: 15px; }
+	.dashboard-mobile-header > .user-avatar { margin-left: auto; }
+	.dashboard-workspace .dashboard-main { width: calc(100% - 36px); padding: 29px 0 38px; }
+	.dashboard-workspace .dashboard-footer { width: calc(100% - 36px); margin-bottom: 18px; }
+	.dashboard-heading-row { align-items: flex-start; margin-bottom: 23px; }
+	.dashboard-heading-row h1 { font-size: 29px; }
+	.dashboard-subtitle { max-width: 450px; margin-top: 7px; font-size: 14px; }
+	.dashboard-date { display: none; }
+	.dashboard-stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 16px; }
+	.dashboard-stat { min-height: 118px; grid-template-columns: 38px 1fr; column-gap: 9px; padding: 14px; border-radius: 10px; }
+	.dashboard-stat--note { grid-column: 1 / -1; min-height: 95px; grid-template-columns: 38px 1fr; }
+	.stat-icon { width: 38px; border-radius: 10px; font-size: 14px; }
+	.stat-label { font-size: 12px; }
+	.dashboard-stat strong { font-size: 22px; }
+	.dashboard-stat .stat-footnote { font-size: 10px; }
+	.dashboard-content-grid { grid-template-columns: 1fr; gap: 14px; }
+	.dashboard-section { padding: 19px 17px; border-radius: 10px; }
+	.section-heading h2 { font-size: 19px; }
+	.empty-visits { min-height: 278px; padding: 20px 6px 8px; }
+	.empty-visits h3 { font-size: 16px; }
+	.empty-visits > p { font-size: 13px; }
+	.next-step-panel { min-height: 290px; padding: 19px; }
+	.next-step-panel > .dashboard-eyebrow { margin-top: 106px; }
+	.next-step-art { width: 105px; }
+	.next-step-panel h2 { font-size: 21px; }
+	.full-width-section { min-height: 0; }
+	.empty-visits--large { min-height: 330px; }
+	.account-section { max-width: none; }
+	.account-detail-row { font-size: 12px; }
+	.account-detail-row strong { font-size: 13px; }
+	.dashboard-workspace .dashboard-footer { padding-top: 14px; font-size: 10px; }
+}
+
+@media (max-width: 380px) {
+	.dashboard-workspace .dashboard-main { width: calc(100% - 28px); }
+	.dashboard-heading-row h1 { font-size: 26px; }
+	.dashboard-stat { padding: 12px 10px; }
+	.dashboard-workspace .dashboard-footer { width: calc(100% - 28px); }
+}
