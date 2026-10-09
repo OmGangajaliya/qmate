@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import '../assets/citizen_css/auth.css'
 import { authenticateCitizen } from './authApi.js'
 
@@ -9,7 +9,6 @@ const CitizenAuth = () => {
 	const [message, setMessage] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const panelRef = useRef(null)
-	const navigate = useNavigate()
 	const isSignup = mode === 'signup'
 
 	useEffect(() => {
@@ -68,7 +67,7 @@ const CitizenAuth = () => {
 		try {
 			const result = await authenticateCitizen(mode, credentials)
 			sessionStorage.setItem('qmate.auth', JSON.stringify(result))
-			navigate('/citizen/dashboard', { replace: true })
+			window.location.replace('/citizen/dashboard')
 		} catch (error) {
 			setMessage(error.message || 'Unable to reach QMate. Check your connection and try again.')
 		} finally {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import '../assets/citizen_css/auth.css'
 import '../assets/employee_css/employee.css'
 import { authenticateEmployee } from './authApi.js'
@@ -9,7 +9,6 @@ const EmployeeAuth = () => {
 	const [message, setMessage] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
 	const panelRef = useRef(null)
-	const navigate = useNavigate()
 
 	useEffect(() => {
 		document.title = 'QMate | Employee access'
@@ -47,7 +46,7 @@ const EmployeeAuth = () => {
 				password: formData.get('password'),
 			})
 			sessionStorage.setItem('qmate.employee.auth', JSON.stringify(result))
-			navigate('/employee/dashboard', { replace: true })
+			window.location.replace('/employee/dashboard')
 		} catch (error) {
 			setMessage(error.message || 'Unable to sign in. Check your connection and try again.')
 		} finally {
