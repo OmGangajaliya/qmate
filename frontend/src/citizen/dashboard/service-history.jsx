@@ -87,7 +87,7 @@ const ServiceHistory = () => {
 					</div>
 				) : (
 					<div className="history-list">
-						{items.map((item) => <HistoryItem item={item} key={item.member_id} />)}
+{items.map((item) => <HistoryItem item={item} key={item.member_id} onExited={() => setReloadKey((key) => key + 1)} />)}
 					</div>
 				)}
 
@@ -102,7 +102,9 @@ const ServiceHistory = () => {
 	)
 }
 
-const HistoryItem = ({ item }) => {
+const HistoryItem = ({ item, onExited }) => {
+	const [exiting, setExiting] = useState(false)
+	const [exitError, setExitError] = useState('')
 	const statusLabel = statusLabels[item.status] || item.status
 	const date = new Date(`${item.service_date}T00:00:00`)
 	const formattedDate = Number.isNaN(date.getTime()) ? item.service_date : new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(date)
@@ -112,6 +114,21 @@ const HistoryItem = ({ item }) => {
 	const completionDuration = completionStart && completionEnd && !Number.isNaN(completionStart.getTime()) && !Number.isNaN(completionEnd.getTime())
 		? Math.max(0, Math.round((completionEnd - completionStart) / 60000))
 		: null
+	const canExitQueue = ['not arrived', 'arrived', 'late'].includes(item.status)
+
+	const handleExitQueue = async () => {
+		if (!canExitQueue || exiting) return
+		setExiting(true)
+		setExitError('')
+		try {
+			await queueApiRequest(`/api/queue/entries/${item.member_id}`, { method: 'DELETE' })
+			onExited?.()
+		} catch (error) {
+			setExitError(error.message || 'Could not exit this queue right now.')
+		} finally {
+			setExiting(false)
+		}
+	}
 
 	return (
 		<article className="history-card">
@@ -123,6 +140,14 @@ const HistoryItem = ({ item }) => {
 				<div><span>Expected time</span><strong><i className="fa-regular fa-clock" aria-hidden="true" />{formattedTimeGiven}</strong></div>
 				{completionDuration !== null && <div><span>Service time</span><strong><i className="fa-regular fa-clock" aria-hidden="true" />{completionDuration} min</strong></div>}
 			</div>
+			{canExitQueue && (
+				<div className="history-card-actions">
+					<button type="button" className="outline-action" onClick={handleExitQueue} disabled={exiting}>
+						<i className="fa-solid fa-circle-xmark" aria-hidden="true" /> {exiting ? 'Exiting…' : 'Exit queue'}
+					</button>
+				</div>
+			)}
+			{exitError && <p className="history-status-note history-status-note--error">{exitError}</p>}
 			{item.status === 'cancelled' || item.status === 'no_show' ? <p className="history-status-note">This booking is no longer active.</p> : null}
 		</article>
 	)

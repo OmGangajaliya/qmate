@@ -5,6 +5,7 @@ const { isInsideCampus } = require('../utils/geofence')
 
 const router = express.Router()
 const terminalStatuses = ['completed', 'cancelled', 'no_show']
+const cancellableStatuses = ['not arrived', 'arrived', 'late']
 const officeTimezone = process.env.OFFICE_TIMEZONE || 'Asia/Kolkata'
 
 const formatDate = (date) => date.toISOString().slice(0, 10)
@@ -194,6 +195,40 @@ router.get('/history', async (request, response) => {
 	} catch (error) {
 		console.error('Unable to load citizen service history:', error.message)
 		return response.status(500).json({ message: 'Unable to load service history right now.' })
+	}
+})
+
+router.delete('/entries/:memberId', async (request, response) => {
+	const memberId = Number(request.params.memberId)
+	if (!Number.isSafeInteger(memberId) || memberId < 1) {
+		return response.status(400).json({ message: 'Select a valid queue entry.' })
+	}
+
+	try {
+		const { rows } = await pool.query(
+			`UPDATE queue_members
+				 SET status = 'cancelled',
+				     "isArrived" = FALSE,
+				     arrived_at = NULL,
+				     updated_at = now()
+			 WHERE member_id = $1
+			   AND user_id = $2
+			   AND status = ANY($3::varchar[])
+			 RETURNING member_id, token_number, status`,
+			[memberId, request.citizen.userId, cancellableStatuses],
+		)
+
+		if (!rows.length) {
+			return response.status(409).json({ message: 'This queue entry cannot be exited right now.' })
+		}
+
+		return response.json({
+			message: 'You have exited the queue.',
+			entry: rows[0],
+		})
+	} catch (error) {
+		console.error('Unable to exit queue membership:', error.message)
+		return response.status(500).json({ message: 'Unable to exit the queue right now.' })
 	}
 })
 
