@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import '../assets/citizen_css/auth.css'
 import { authenticateCitizen } from './authApi.js'
 
@@ -7,14 +8,8 @@ const CitizenAuth = () => {
 	const [showPassword, setShowPassword] = useState(false)
 	const [message, setMessage] = useState('')
 	const [isSubmitting, setIsSubmitting] = useState(false)
-	const [authenticatedUser, setAuthenticatedUser] = useState(() => {
-		try {
-			return JSON.parse(sessionStorage.getItem('qmate.auth') || 'null')?.user || null
-		} catch {
-			return null
-		}
-	})
 	const panelRef = useRef(null)
+	const navigate = useNavigate()
 	const isSignup = mode === 'signup'
 
 	useEffect(() => {
@@ -73,19 +68,12 @@ const CitizenAuth = () => {
 		try {
 			const result = await authenticateCitizen(mode, credentials)
 			sessionStorage.setItem('qmate.auth', JSON.stringify(result))
-			setAuthenticatedUser(result.user)
-			setMessage(result.message)
+			navigate('/citizen/dashboard', { replace: true })
 		} catch (error) {
 			setMessage(error.message || 'Unable to reach QMate. Check your connection and try again.')
 		} finally {
 			setIsSubmitting(false)
 		}
-	}
-
-	const signOut = () => {
-		sessionStorage.removeItem('qmate.auth')
-		setAuthenticatedUser(null)
-		setMessage('')
 	}
 
 	return (
@@ -144,13 +132,6 @@ const CitizenAuth = () => {
 						<h2>{isSignup ? 'Create your account' : 'Good to see you.'}</h2>
 						<p>{isSignup ? 'A few details and you’re ready to go.' : 'Sign in to make your next visit a little easier.'}</p>
 					</div>
-					{authenticatedUser && (
-						<p className="auth-session" role="status">
-							Signed in as {authenticatedUser.name}.
-							<button className="text-button" type="button" onClick={signOut}>Sign out</button>
-						</p>
-					)}
-
 					<div className="mode-switch" role="tablist" aria-label="Authentication type">
 						<button className={isSignup ? '' : 'is-active'} type="button" role="tab" aria-selected={!isSignup} onClick={() => switchMode('signin')}>Sign in</button>
 						<button className={isSignup ? 'is-active' : ''} type="button" role="tab" aria-selected={isSignup} onClick={() => switchMode('signup')}>Create account</button>

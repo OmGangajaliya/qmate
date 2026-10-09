@@ -104,11 +104,11 @@
 .art-spark--two { bottom: 24%; left: 15%; color: #c6a589; font-size: 15px; }
 
 .welcome-copy { max-width: 430px; padding-bottom: 42px; }
-.eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; color: #b8754b; font-size: 9px; font-weight: 700; letter-spacing: 1.4px; }
+.eyebrow { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; color: #b8754b; font-size: 10px; font-weight: 700; letter-spacing: 1.4px; }
 .eyebrow span { width: 18px; height: 1px; background: #d99569; }
 .welcome-copy h1 { margin: 0; color: #302921; font: 700 clamp(34px, 3.2vw, 45px)/1.12 'Manrope', sans-serif; letter-spacing: 0; }
-.welcome-description { max-width: 360px; margin: 15px 0 20px; color: #81786f; font-size: 13px; line-height: 1.75; }
-.trust-row { display: flex; align-items: center; gap: 9px; color: #877c72; font-size: 10px; }
+.welcome-description { max-width: 360px; margin: 15px 0 20px; color: #81786f; font-size: 14px; line-height: 1.75; }
+.trust-row { display: flex; align-items: center; gap: 9px; color: #877c72; font-size: 11px; }
 .trust-icon { color: #bc825b; font-size: 12px; }
 .panel-footnote { position: absolute; bottom: 29px; right: 34px; color: #b8a89a; font-size: 8px; font-weight: 700; letter-spacing: 1.2px; }
 
@@ -116,32 +116,32 @@
 .form-panel::before { position: absolute; inset: 0 auto 0 0; width: 1px; background: linear-gradient(transparent, #f3e9df 18%, #f3e9df 82%, transparent); content: ''; }
 .form-topline { display: flex; min-height: 34px; align-items: center; justify-content: flex-end; }
 .mobile-brand { display: none; }
-.secure-label { display: flex; align-items: center; gap: 7px; color: #a69c93; font-size: 8px; font-weight: 700; letter-spacing: 0.8px; }
+.secure-label { display: flex; align-items: center; gap: 7px; color: #a69c93; font-size: 9px; font-weight: 700; letter-spacing: 0.8px; }
 .secure-label i { color: #8b9b7e; }
 .auth-content { width: 100%; max-width: 390px; margin: 25px auto; }
 .form-heading .eyebrow { margin-bottom: 10px; color: #d27c4e; }
 .form-heading .eyebrow::before { width: 16px; height: 1px; background: #e2a27c; content: ''; }
 .form-heading h2 { margin: 0; color: #302921; font: 700 27px/1.25 'Manrope', sans-serif; letter-spacing: 0; }
-.form-heading > p:last-child { margin: 8px 0 25px; color: #8e867e; font-size: 12px; }
+.form-heading > p:last-child { margin: 8px 0 25px; color: #8e867e; font-size: 13px; }
 .auth-session { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -10px 0 18px; color: #6b8064; font-size: 10px; }
 .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 23px; padding: 4px; border: 1px solid #f0eae4; border-radius: 10px; background: rgba(250, 247, 243, 0.8); }
-.mode-switch button { min-height: 36px; border: 0; border-radius: 7px; background: transparent; color: #938a81; cursor: pointer; font-size: 11px; font-weight: 600; transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease; }
+.mode-switch button { min-height: 38px; border: 0; border-radius: 7px; background: transparent; color: #938a81; cursor: pointer; font-size: 12px; font-weight: 600; transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease; }
 .mode-switch button.is-active { background: rgba(255, 255, 255, 0.95); box-shadow: 0 2px 7px rgba(72, 54, 38, 0.08); color: #4b4037; }
 .auth-form { display: grid; gap: 15px; }
-.field { display: grid; gap: 7px; color: #655d55; font-size: 10px; font-weight: 600; }
+.field { display: grid; gap: 7px; color: #655d55; font-size: 11px; font-weight: 600; }
 .input-wrap { position: relative; display: flex; height: 45px; align-items: center; border: 1px solid #ebe5df; border-radius: 8px; background: rgba(255, 255, 255, 0.78); transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease; }
 .input-wrap:focus-within { border-color: #e79a6d; background: white; box-shadow: 0 0 0 3px rgba(237, 123, 55, 0.1); }
-.input-wrap input { width: 100%; height: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 11px; }
+.input-wrap input { width: 100%; height: 100%; border: 0; outline: 0; background: transparent; color: var(--ink); font-size: 13px; }
 .input-wrap input::placeholder { color: #b1aaa3; }
 .field-icon { width: 42px; color: #b6a89b; text-align: center; font-size: 12px; }
 .visibility-button { display: grid; width: 40px; height: 100%; flex: 0 0 40px; place-items: center; border: 0; background: none; color: #a49a91; cursor: pointer; }
-.check-label { display: flex; align-items: center; gap: 7px; color: #8a8178; font-size: 10px; }
+.check-label { display: flex; align-items: center; gap: 7px; color: #8a8178; font-size: 11px; }
 .check-label input { width: 13px; height: 13px; margin: 0; accent-color: var(--orange); }
 .text-button { padding: 3px 0; border: 0; background: none; color: #d2703c; cursor: pointer; font-size: 10px; font-weight: 600; }
 .terms-label { align-items: flex-start; line-height: 1.6; }
 .terms-label input { margin-top: 2px; flex: 0 0 13px; }
 .terms-label a { color: #c96a39; text-decoration: none; }
-.submit-button { display: flex; width: 100%; min-height: 46px; align-items: center; justify-content: space-between; margin-top: 2px; padding: 0 16px; border: 0; border-radius: 8px; background: linear-gradient(100deg, #ef9257, #e87536); box-shadow: 0 8px 18px rgba(213, 106, 48, 0.2); color: white; cursor: pointer; font-size: 11px; font-weight: 700; transition: transform 160ms ease, box-shadow 160ms ease; }
+.submit-button { display: flex; width: 100%; min-height: 48px; align-items: center; justify-content: space-between; margin-top: 2px; padding: 0 16px; border: 0; border-radius: 8px; background: linear-gradient(100deg, #ef9257, #e87536); box-shadow: 0 8px 18px rgba(213, 106, 48, 0.2); color: white; cursor: pointer; font-size: 12px; font-weight: 700; transition: transform 160ms ease, box-shadow 160ms ease; }
 .submit-button:hover { box-shadow: 0 10px 24px rgba(213, 106, 48, 0.27); transform: translateY(-1px); }
 .submit-button:disabled { cursor: wait; opacity: 0.72; transform: none; }
 .submit-button i { font-size: 12px; }
