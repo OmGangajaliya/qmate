@@ -6,7 +6,7 @@ const queueRoutes = require('./routes/queue.route')
 
 const app = express()
 const allowedOrigins = new Set(
-	(process.env.CORS_ORIGINS || 'http://localhost:5173,https://qmate-beige.vercel.app/')
+	(process.env.CORS_ORIGINS || 'http://localhost:5173,https://qmate-beige.vercel.app')
 		.split(',')
 		.map((origin) => origin.trim())
 		.filter(Boolean),
