@@ -80,10 +80,10 @@ npm install
 npm run dev
 ```
 
-For local development, copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL`, `DB_SSL`, and a random `JWT_SECRET` of at least 32 characters. Copy `frontend/.env.example` to `frontend/.env` to configure `VITE_API_URL`; it should point to the backend origin. Keep `.env` files out of version control.
+For local development, copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL`, `DB_SSL`, and a random `JWT_SECRET` of at least 32 characters. Set `OFFICE_TIMEZONE` to the IANA timezone used by the government office (defaults to `Asia/Kolkata`) for same-day booking-hour checks. Copy `frontend/.env.example` to `frontend/.env` to configure `VITE_API_URL`; it should point to the backend origin. Keep `.env` files out of version control.
 
 The API checks the database connection before listening and exposes `GET /health` as a database health check. Citizen registration and login are available at `POST /api/auth/register` and `POST /api/auth/login`.
 
 Before enabling citizen queue booking on an existing database, run `backend/src/db/migrations/001_queue_booking_metadata.sql` once against the Render PostgreSQL database. It ensures the office-level `buffer_time_minutes` column exists and creates the employee holiday table used to disable booking on holiday dates.
 
-On Render, add `DATABASE_URL`, `DB_SSL=true`, `JWT_SECRET`, and `CORS_ORIGINS` to the backend web service. `CORS_ORIGINS` must include the deployed frontend origin. Set the frontend's `VITE_API_URL` to the backend service origin and rebuild/redeploy the frontend after changing it. Use `npm start` as the backend start command.
+On Render, add `DATABASE_URL`, `DB_SSL=true`, `JWT_SECRET`, `CORS_ORIGINS`, and `OFFICE_TIMEZONE` to the backend web service. `CORS_ORIGINS` must include the deployed frontend origin. Set the frontend's `VITE_API_URL` to the backend service origin and rebuild/redeploy the frontend after changing it. Use `npm start` as the backend start command.

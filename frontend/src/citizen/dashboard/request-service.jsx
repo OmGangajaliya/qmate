@@ -215,7 +215,9 @@ const RequestService = () => {
 					<div className="result-title"><span className="result-icon"><i className="fa-solid fa-people-group" aria-hidden="true" /></span><div><p className="dashboard-eyebrow">QUEUE ESTIMATE</p><h2>{availability.counter.name}</h2><p>{availability.service.name} · {availability.date}</p></div></div>
 					<div className="result-stats"><div><strong>{availability.peopleWaiting}</strong><span>{availability.peopleWaiting === 1 ? 'person' : 'people'} currently waiting</span></div><div><strong>{formatWait(availability.estimatedWaitMinutes)}</strong><span>estimated time until your turn</span></div></div>
 					<p className="buffer-explanation">Estimate accounts for the service times ahead and the counter’s scheduling buffer.</p>
-					<button className="request-search-button join-queue-button" type="button" onClick={joinQueue} disabled={joining}><span>{joining ? 'Joining queue…' : 'Join this queue'}</span><i className={`fa-solid ${joining ? 'fa-spinner fa-spin' : 'fa-arrow-right'}`} aria-hidden="true" /></button>
+					{availability.officeHours && <p className="office-hours-note"><i className="fa-regular fa-clock" aria-hidden="true" /><span>Office hours: {formatOfficeTime(availability.officeHours.opening)}–{formatOfficeTime(availability.officeHours.closing)} ({availability.officeHours.timezone})</span></p>}
+					{availability.message && <p className="request-hours-error" role="status"><i className="fa-solid fa-circle-info" aria-hidden="true" />{availability.message}</p>}
+					<button className="request-search-button join-queue-button" type="button" onClick={joinQueue} disabled={joining || availability.canJoin === false}><span>{joining ? 'Joining queue…' : availability.canJoin === false ? 'Outside office hours' : 'Join this queue'}</span><i className={`fa-solid ${joining ? 'fa-spinner fa-spin' : availability.canJoin === false ? 'fa-clock' : 'fa-arrow-right'}`} aria-hidden="true" /></button>
 				</section>
 			)}
 		</>
@@ -227,6 +229,11 @@ const formatWait = (minutes) => {
 	const hours = Math.floor(minutes / 60)
 	const remainingMinutes = minutes % 60
 	return remainingMinutes ? `${hours} hr ${remainingMinutes} min` : `${hours} hr`
+}
+
+const formatOfficeTime = (time) => {
+	const [hours, minutes] = time.split(':').map(Number)
+	return new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date(2000, 0, 1, hours, minutes))
 }
 
 export default RequestService

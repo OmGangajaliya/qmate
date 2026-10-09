@@ -5,6 +5,7 @@ const { isInsideCampus } = require('../utils/geofence')
 
 const router = express.Router()
 const terminalStatuses = ['completed', 'cancelled', 'no_show']
+const officeTimezone = process.env.OFFICE_TIMEZONE || 'Asia/Kolkata'
 
 const formatDate = (date) => date.toISOString().slice(0, 10)
 
@@ -27,6 +28,30 @@ const validateBookingDate = (value) => {
 	if (!isValidDate(value)) return 'Select a valid service date.'
 	if (value < todayUtc() || value > maxBookingDate()) return 'Choose a date from today through the next month.'
 	return null
+}
+
+const getOfficeHours = async (client, date, openingTime, closingTime) => {
+	const { rows } = await client.query(
+		`SELECT (now() AT TIME ZONE $1)::date::text AS office_today,
+		        (now() AT TIME ZONE $1)::time AS office_time`,
+		[officeTimezone],
+	)
+	const officeToday = rows[0].office_today
+	const opening = String(openingTime).slice(0, 5)
+	const closing = String(closingTime).slice(0, 5)
+	const currentTime = String(rows[0].office_time).slice(0, 5)
+	const isToday = date === officeToday
+	const withinHours = !isToday || (currentTime >= opening && currentTime < closing)
+
+	return {
+		isToday,
+		withinHours,
+		openingTime: opening,
+		closingTime: closing,
+		message: withinHours
+			? null
+			: `Same-day queue joining is available between ${opening} and ${closing} local time. Choose a specific date to book ahead.`,
+	}
 }
 
 const minutesFromBuffer = (value) => {
@@ -291,7 +316,8 @@ router.get('/availability', async (request, response) => {
 	const client = await pool.connect()
 	try {
 		const { rows: selectedRows } = await client.query(
-			`SELECT c.counter_id, c.counter_name, go.buffer_time_minutes, s.service_id, s.service_name
+			`SELECT c.counter_id, c.counter_name, go.buffer_time_minutes,
+			        go.opening_time, go.closing_time, s.service_id, s.service_name
 			 FROM counters c
 			 JOIN employees e ON e.employee_id = c.employee_id
 			 JOIN government_office go ON go.gov_id = e.gov_id
@@ -300,6 +326,7 @@ router.get('/availability', async (request, response) => {
 			[counterId, serviceId],
 		)
 		if (!selectedRows.length) return response.status(404).json({ message: 'That service is not available at this counter.' })
+		const officeHours = await getOfficeHours(client, date, selectedRows[0].opening_time, selectedRows[0].closing_time)
 
 		const holiday = await getCounterHoliday(client, counterId, date)
 		if (holiday) {
@@ -324,6 +351,9 @@ router.get('/availability', async (request, response) => {
 			date,
 			counter: { id: selectedRows[0].counter_id, name: selectedRows[0].counter_name },
 			service: { id: selectedRows[0].service_id, name: selectedRows[0].service_name },
+			canJoin: officeHours.withinHours,
+			officeHours: { opening: officeHours.openingTime, closing: officeHours.closingTime, timezone: officeTimezone },
+			message: officeHours.message,
 			...estimate,
 		})
 	} catch (error) {
@@ -349,7 +379,8 @@ router.post('/join', async (request, response) => {
 		await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1, 0))', [`${counterId}:${date}`])
 
 		const { rows: selectedRows } = await client.query(
-			`SELECT c.counter_id, c.counter_name, go.buffer_time_minutes, s.service_id, s.service_name
+			`SELECT c.counter_id, c.counter_name, go.buffer_time_minutes,
+			        go.opening_time, go.closing_time, s.service_id, s.service_name
 			 FROM counters c
 			 JOIN employees e ON e.employee_id = c.employee_id
 			 JOIN government_office go ON go.gov_id = e.gov_id
@@ -360,6 +391,11 @@ router.post('/join', async (request, response) => {
 		if (!selectedRows.length) {
 			await client.query('ROLLBACK')
 			return response.status(404).json({ message: 'That service is not available at this counter.' })
+		}
+		const officeHours = await getOfficeHours(client, date, selectedRows[0].opening_time, selectedRows[0].closing_time)
+		if (!officeHours.withinHours) {
+			await client.query('ROLLBACK')
+			return response.status(409).json({ message: officeHours.message, officeHours: { opening: officeHours.openingTime, closing: officeHours.closingTime, timezone: officeTimezone } })
 		}
 
 		const holiday = await getCounterHoliday(client, counterId, date)
