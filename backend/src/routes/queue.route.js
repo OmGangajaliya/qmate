@@ -10,15 +10,38 @@ const officeTimezone = process.env.OFFICE_TIMEZONE || 'Asia/Kolkata'
 
 const formatDate = (date) => date.toISOString().slice(0, 10)
 
-const todayUtc = () => formatDate(new Date())
+const getOfficeDateParts = (date) => {
+	const parts = new Intl.DateTimeFormat('en-CA', {
+		timeZone: officeTimezone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		calendar: 'iso8601',
+	}).formatToParts(date)
+	return Object.fromEntries(
+		parts
+			.filter((part) => part.type !== 'literal')
+			.map((part) => [part.type, part.value]),
+	)
+}
+
+const officeDateString = (date = new Date()) => {
+	const parts = getOfficeDateParts(date)
+	return `${parts.year}-${parts.month}-${parts.day}`
+}
+
+const todayUtc = () => officeDateString(new Date())
 
 const maxBookingDate = () => {
 	const now = new Date()
-	const targetMonth = now.getUTCMonth() + 1
-	const targetYear = now.getUTCFullYear() + Math.floor(targetMonth / 12)
-	const month = targetMonth % 12
-	const lastDay = new Date(Date.UTC(targetYear, month + 1, 0)).getUTCDate()
-	return formatDate(new Date(Date.UTC(targetYear, month, Math.min(now.getUTCDate(), lastDay))))
+	const officeParts = getOfficeDateParts(now)
+	const year = Number(officeParts.year)
+	const monthZeroBased = Number(officeParts.month) - 1
+	const day = Number(officeParts.day)
+	const nextMonthFirst = new Date(Date.UTC(year, monthZeroBased + 1, 1))
+	const lastDay = new Date(Date.UTC(nextMonthFirst.getUTCFullYear(), nextMonthFirst.getUTCMonth() + 1, 0)).getUTCDate()
+	const cappedDay = Math.min(day, lastDay)
+	return `${nextMonthFirst.getUTCFullYear()}-${String(nextMonthFirst.getUTCMonth() + 1).padStart(2, '0')}-${String(cappedDay).padStart(2, '0')}`
 }
 
 const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value)
