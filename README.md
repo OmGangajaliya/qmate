@@ -49,6 +49,11 @@ Government offices often run several service counters at once, each with a diffe
 
 Currently under development
 
+## Team
+
+- **Om Gangajaliya** - Leader
+- **Nikhil Gangajaliya** - Team Member
+
 ## Development Setup
 
 ### Frontend
