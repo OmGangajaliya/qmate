@@ -10,6 +10,10 @@ const getToken = () => {
 }
 
 export const queueApiRequest = async (path, { method = 'GET', body } = {}) => {
+	if (!apiUrl) {
+		throw new Error('Frontend API URL is not configured. Set VITE_API_URL in Vercel and redeploy.')
+	}
+
 	const headers = { Authorization: `Bearer ${getToken()}` }
 	if (body) headers['Content-Type'] = 'application/json'
 
@@ -23,7 +27,11 @@ export const queueApiRequest = async (path, { method = 'GET', body } = {}) => {
 		throw new Error('Could not reach QMate. Check your connection and try again.')
 	}
 
-	const result = await response.json().catch(() => ({}))
+	const contentType = response.headers.get('content-type') || ''
+	if (!contentType.includes('application/json')) {
+		throw new Error('The API URL did not return JSON. Verify VITE_API_URL in Vercel and redeploy.')
+	}
+	const result = await response.json()
 	if (!response.ok) throw new Error(result.message || 'The request could not be completed.')
 	return result
 }
