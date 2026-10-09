@@ -80,6 +80,8 @@ npm install
 npm run dev
 ```
 
-Set `DATABASE_URL` to the PostgreSQL connection string from Render in the backend environment. Set `DB_SSL=true` for the Render database connection; for local PostgreSQL, copy `backend/.env.example` to `backend/.env` and set its connection string and SSL preference. Keep `.env` out of version control.
+For local development, copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL`, `DB_SSL`, and a random `JWT_SECRET` of at least 32 characters. Copy `frontend/.env.example` to `frontend/.env` to configure `VITE_API_URL`; it should point to the backend origin. Keep `.env` files out of version control.
 
-The API checks the database connection before listening and exposes `GET /health` as a database health check. On Render, add `DATABASE_URL` and `DB_SSL=true` under the backend web service's environment variables, then use `npm start` as the start command.
+The API checks the database connection before listening and exposes `GET /health` as a database health check. Citizen registration and login are available at `POST /api/auth/register` and `POST /api/auth/login`.
+
+On Render, add `DATABASE_URL`, `DB_SSL=true`, `JWT_SECRET`, and `CORS_ORIGINS` to the backend web service. `CORS_ORIGINS` must include the deployed frontend origin. Set the frontend's `VITE_API_URL` to the backend service origin and rebuild/redeploy the frontend after changing it. Use `npm start` as the backend start command.

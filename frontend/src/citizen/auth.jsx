@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from 'react'
 import '../assets/citizen_css/auth.css'
+import { authenticateCitizen } from './authApi.js'
 
 const CitizenAuth = () => {
 	const [mode, setMode] = useState('signin')
 	const [showPassword, setShowPassword] = useState(false)
 	const [message, setMessage] = useState('')
+	const [isSubmitting, setIsSubmitting] = useState(false)
+	const [authenticatedUser, setAuthenticatedUser] = useState(() => {
+		try {
+			return JSON.parse(sessionStorage.getItem('qmate.auth') || 'null')?.user || null
+		} catch {
+			return null
+		}
+	})
 	const panelRef = useRef(null)
 	const isSignup = mode === 'signup'
 
@@ -44,7 +53,7 @@ const CitizenAuth = () => {
 		setShowPassword(false)
 	}
 
-	const handleSubmit = (event) => {
+	const handleSubmit = async (event) => {
 		event.preventDefault()
 		const formData = new FormData(event.currentTarget)
 
@@ -53,11 +62,30 @@ const CitizenAuth = () => {
 			return
 		}
 
-		setMessage(
-			isSignup
-				? 'Your details look good. Account creation will be available when QMate authentication is connected.'
-				: 'Your details look good. Sign-in will be available when QMate authentication is connected.',
-		)
+		setIsSubmitting(true)
+		setMessage('')
+		const credentials = {
+			phone: formData.get('phone'),
+			password: formData.get('password'),
+		}
+		if (isSignup) credentials.fullName = formData.get('fullName')
+
+		try {
+			const result = await authenticateCitizen(mode, credentials)
+			sessionStorage.setItem('qmate.auth', JSON.stringify(result))
+			setAuthenticatedUser(result.user)
+			setMessage(result.message)
+		} catch (error) {
+			setMessage(error.message || 'Unable to reach QMate. Check your connection and try again.')
+		} finally {
+			setIsSubmitting(false)
+		}
+	}
+
+	const signOut = () => {
+		sessionStorage.removeItem('qmate.auth')
+		setAuthenticatedUser(null)
+		setMessage('')
 	}
 
 	return (
@@ -116,6 +144,12 @@ const CitizenAuth = () => {
 						<h2>{isSignup ? 'Create your account' : 'Good to see you.'}</h2>
 						<p>{isSignup ? 'A few details and you’re ready to go.' : 'Sign in to make your next visit a little easier.'}</p>
 					</div>
+					{authenticatedUser && (
+						<p className="auth-session" role="status">
+							Signed in as {authenticatedUser.name}.
+							<button className="text-button" type="button" onClick={signOut}>Sign out</button>
+						</p>
+					)}
 
 					<div className="mode-switch" role="tablist" aria-label="Authentication type">
 						<button className={isSignup ? '' : 'is-active'} type="button" role="tab" aria-selected={!isSignup} onClick={() => switchMode('signin')}>Sign in</button>
@@ -166,8 +200,8 @@ const CitizenAuth = () => {
 							<label className="check-label terms-label"><input type="checkbox" name="terms" required /><span>I agree to the <a href="#terms">terms of service</a> and <a href="#privacy">privacy notice</a>.</span></label>
 						)}
 
-						<button className="submit-button" type="submit">
-							<span>{isSignup ? 'Create account' : 'Sign in'}</span>
+						<button className="submit-button" type="submit" disabled={isSubmitting}>
+							<span>{isSubmitting ? 'Please wait…' : isSignup ? 'Create account' : 'Sign in'}</span>
 							<i className={`fa-solid ${isSignup ? 'fa-arrow-right' : 'fa-arrow-right-to-bracket'}`} aria-hidden="true" />
 						</button>
 

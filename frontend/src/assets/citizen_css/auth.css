@@ -123,6 +123,7 @@
 .form-heading .eyebrow::before { width: 16px; height: 1px; background: #e2a27c; content: ''; }
 .form-heading h2 { margin: 0; color: #302921; font: 700 27px/1.25 'Manrope', sans-serif; letter-spacing: 0; }
 .form-heading > p:last-child { margin: 8px 0 25px; color: #8e867e; font-size: 12px; }
+.auth-session { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -10px 0 18px; color: #6b8064; font-size: 10px; }
 .mode-switch { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin-bottom: 23px; padding: 4px; border: 1px solid #f0eae4; border-radius: 10px; background: rgba(250, 247, 243, 0.8); }
 .mode-switch button { min-height: 36px; border: 0; border-radius: 7px; background: transparent; color: #938a81; cursor: pointer; font-size: 11px; font-weight: 600; transition: color 160ms ease, background 160ms ease, box-shadow 160ms ease; }
 .mode-switch button.is-active { background: rgba(255, 255, 255, 0.95); box-shadow: 0 2px 7px rgba(72, 54, 38, 0.08); color: #4b4037; }
@@ -142,6 +143,7 @@
 .terms-label a { color: #c96a39; text-decoration: none; }
 .submit-button { display: flex; width: 100%; min-height: 46px; align-items: center; justify-content: space-between; margin-top: 2px; padding: 0 16px; border: 0; border-radius: 8px; background: linear-gradient(100deg, #ef9257, #e87536); box-shadow: 0 8px 18px rgba(213, 106, 48, 0.2); color: white; cursor: pointer; font-size: 11px; font-weight: 700; transition: transform 160ms ease, box-shadow 160ms ease; }
 .submit-button:hover { box-shadow: 0 10px 24px rgba(213, 106, 48, 0.27); transform: translateY(-1px); }
+.submit-button:disabled { cursor: wait; opacity: 0.72; transform: none; }
 .submit-button i { font-size: 12px; }
 .form-message { display: none; margin: -3px 0 0; color: #6b8064; font-size: 10px; line-height: 1.6; }
 .form-message.is-visible { display: block; }

@@ -1,9 +1,21 @@
 const express = require('express')
+const cors = require('cors')
 const { pool } = require('./db/connectdb')
+const authRoutes = require('./routes/auth.route')
 
 const app = express()
+const allowedOrigins = new Set(
+	(process.env.CORS_ORIGINS || 'http://localhost:5173')
+		.split(',')
+		.map((origin) => origin.trim())
+		.filter(Boolean),
+)
 
+app.use(cors({
+	origin: (origin, callback) => callback(null, !origin || allowedOrigins.has(origin)),
+}))
 app.use(express.json())
+app.use('/api/auth', authRoutes)
 
 app.get('/health', async (_request, response) => {
 	try {
