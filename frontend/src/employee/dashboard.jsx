@@ -22,6 +22,22 @@ const statusLabels = {
 	cancelled: 'Cancelled',
 }
 
+const QueueTable = ({ items, busyMemberId, onAction }) => (
+	<div className="employee-table-wrap">
+		<table className="employee-queue-table">
+			<thead><tr><th>Position</th><th>Customer</th><th>Service</th><th>Status</th><th>Est. time</th><th>Action</th></tr></thead>
+			<tbody>{items.map((item) => <tr key={item.member_id}>
+				<td><strong className="employee-token">{item.token_number}</strong><small>#{item.q_position}</small></td>
+				<td><strong>{item.citizen_name}</strong><small>{item.arrived_at ? `Arrived ${new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date(item.arrived_at))}` : 'Arrival not recorded'}</small></td>
+				<td>{item.service_name}<small>{item.average_service_minutes} min service</small></td>
+				<td><span className={`employee-status employee-status--${item.status.replaceAll(' ', '-')}`}>{statusLabels[item.status] || item.status}</span></td>
+				<td>{item.time_given || '—'}</td>
+				<td>{item.status === 'arrived' && item.is_arrived ? <button className="employee-row-action" type="button" disabled={busyMemberId === item.member_id} onClick={() => onAction(item, 'start')}>{busyMemberId === item.member_id ? 'Working…' : 'Serve'}<i className="fa-solid fa-arrow-right" aria-hidden="true" /></button> : item.status === 'serving' ? <button className="employee-row-action employee-row-action--complete" type="button" disabled={busyMemberId === item.member_id} onClick={() => onAction(item, 'complete')}>{busyMemberId === item.member_id ? 'Working…' : 'Complete'}<i className="fa-solid fa-check" aria-hidden="true" /></button> : <span className="employee-no-action">{item.status === 'completed' ? 'Done' : '—'}</span>}</td>
+			</tr>)}</tbody>
+		</table>
+	</div>
+)
+
 const EmployeeDashboard = () => {
 	const [session, setSession] = useState(() => {
 		try { return JSON.parse(sessionStorage.getItem('qmate.employee.auth') || 'null') } catch { return null }
@@ -41,8 +57,11 @@ const EmployeeDashboard = () => {
 	const firstName = user?.name?.trim().split(/\s+/)[0] || 'there'
 	const selectedCounter = counters.find((counter) => String(counter.counter_id) === String(counterId))
 	const activeItems = items.filter(({ status }) => ['not arrived', 'arrived', 'serving', 'late'].includes(status))
-	const arrivedCount = items.filter(({ status }) => status === 'arrived').length
-	const servingCount = items.filter(({ status }) => status === 'serving').length
+	const arrivedItems = items.filter(({ status, is_arrived }) => status === 'arrived' && is_arrived).sort((left, right) => left.q_position - right.q_position)
+	const servingItems = items.filter(({ status }) => status === 'serving').sort((left, right) => left.q_position - right.q_position)
+	const waitingItems = items.filter(({ status, is_arrived }) => ['not arrived', 'late'].includes(status) || (status === 'arrived' && !is_arrived)).sort((left, right) => left.q_position - right.q_position)
+	const arrivedCount = arrivedItems.length
+	const servingCount = servingItems.length
 	const completedCount = items.filter(({ status }) => status === 'completed').length
 
 	useEffect(() => {
@@ -107,6 +126,27 @@ const EmployeeDashboard = () => {
 		}
 	}
 
+	const callNext = async () => {
+		setBusyMemberId('next')
+		setError('')
+		setNotice('')
+		try {
+			const result = await employeeApiRequest('/api/employee/queue/next', {
+				method: 'POST',
+				body: { counterId: Number(counterId), date },
+			})
+			const skippedCount = result.postponed?.length || 0
+			setNotice(skippedCount
+				? `${result.message} ${skippedCount} not-arrived ${skippedCount === 1 ? 'turn was' : 'turns were'} moved to the back of the queue.`
+				: result.message)
+			setRefreshTick((tick) => tick + 1)
+		} catch (requestError) {
+			setError(requestError.message)
+		} finally {
+			setBusyMemberId(null)
+		}
+	}
+
 	const signOut = () => {
 		sessionStorage.removeItem('qmate.employee.auth')
 		setSession(null)
@@ -130,11 +170,15 @@ const EmployeeDashboard = () => {
 						<article className="dashboard-stat dashboard-stat--note"><span className="stat-icon stat-icon--sand"><i className="fa-solid fa-circle-check" aria-hidden="true" /></span><div><span className="stat-label">Completed today</span><strong>{completedCount}</strong></div><span className="stat-footnote">{servingCount} currently being served</span></article>
 					</section>
 					<section className="dashboard-section employee-queue-section">
-						<div className="section-heading employee-queue-heading"><div><p className="dashboard-eyebrow">COUNTER OPERATIONS</p><h2>{selectedCounter?.counter_name || 'Assigned queue'}</h2><p className="employee-office-label">{selectedCounter?.office_name || user?.officeName || 'Your service counter'}</p></div><button className="employee-refresh" type="button" title="Refresh queue" aria-label="Refresh queue" onClick={() => setRefreshTick((tick) => tick + 1)} disabled={isLoading}><i className={`fa-solid fa-rotate${isLoading ? ' fa-spin' : ''}`} aria-hidden="true" /></button></div>
+						<div className="section-heading employee-queue-heading"><div><p className="dashboard-eyebrow">COUNTER OPERATIONS</p><h2>{selectedCounter?.counter_name || 'Assigned queue'}</h2><p className="employee-office-label">{selectedCounter?.office_name || user?.officeName || 'Your service counter'}</p></div><div className="employee-queue-actions"><button className="employee-next-button" type="button" onClick={callNext} disabled={!counterId || !arrivedCount || servingCount > 0 || busyMemberId !== null || isLoading}>{busyMemberId === 'next' ? 'Calling…' : 'Next customer'}<i className="fa-solid fa-forward-step" aria-hidden="true" /></button><button className="employee-refresh" type="button" title="Refresh queue" aria-label="Refresh queue" onClick={() => setRefreshTick((tick) => tick + 1)} disabled={isLoading}><i className={`fa-solid fa-rotate${isLoading ? ' fa-spin' : ''}`} aria-hidden="true" /></button></div></div>
 						<div className="employee-queue-controls"><label className="employee-control"><span>Counter</span><select value={counterId} onChange={(event) => setCounterId(event.target.value)} disabled={!counters.length}><option value="">No assigned counters</option>{counters.map((counter) => <option key={counter.counter_id} value={counter.counter_id}>Counter {counter.counter_number} · {counter.counter_name}</option>)}</select></label><label className="employee-control"><span>Queue date</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label><span className="employee-live-indicator"><i /> Live refresh · 20 sec</span></div>
 						{error && <p className="employee-feedback employee-feedback--error" role="alert"><i className="fa-solid fa-triangle-exclamation" aria-hidden="true" />{error}</p>}
 						{notice && <p className="employee-feedback employee-feedback--success" role="status"><i className="fa-solid fa-circle-check" aria-hidden="true" />{notice}</p>}
-						{!isLoadingCounters && !counters.length ? <div className="employee-empty"><span><i className="fa-solid fa-building" aria-hidden="true" /></span><h3>No counter is assigned</h3><p>Your employee account is valid, but no service counter is currently assigned to it. Ask an administrator to assign a counter.</p></div> : (isLoadingCounters || isLoading) && !items.length ? <div className="employee-empty employee-empty--compact"><i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" /><p>Loading today’s queue…</p></div> : items.length ? <div className="employee-table-wrap"><table className="employee-queue-table"><thead><tr><th>Position</th><th>Customer</th><th>Service</th><th>Status</th><th>Est. time</th><th>Action</th></tr></thead><tbody>{items.map((item) => <tr key={item.member_id}><td><strong className="employee-token">{item.token_number}</strong><small>#{item.q_position}</small></td><td><strong>{item.citizen_name}</strong><small>{item.arrived_at ? `Arrived ${new Intl.DateTimeFormat('en', { hour: 'numeric', minute: '2-digit' }).format(new Date(item.arrived_at))}` : 'Arrival not recorded'}</small></td><td>{item.service_name}<small>{item.average_service_minutes} min service</small></td><td><span className={`employee-status employee-status--${item.status.replaceAll(' ', '-')}`}>{statusLabels[item.status] || item.status}</span></td><td>{item.time_given || '—'}</td><td>{item.status === 'arrived' ? <button className="employee-row-action" type="button" disabled={busyMemberId === item.member_id} onClick={() => handleEntryAction(item, 'start')}>{busyMemberId === item.member_id ? 'Working…' : 'Start service'}<i className="fa-solid fa-arrow-right" aria-hidden="true" /></button> : item.status === 'serving' ? <button className="employee-row-action employee-row-action--complete" type="button" disabled={busyMemberId === item.member_id} onClick={() => handleEntryAction(item, 'complete')}>{busyMemberId === item.member_id ? 'Working…' : 'Complete'}<i className="fa-solid fa-check" aria-hidden="true" /></button> : <span className="employee-no-action">{item.status === 'completed' ? 'Done' : '—'}</span>}</td></tr>)}</tbody></table></div> : <div className="employee-empty"><span><i className="fa-solid fa-ticket" aria-hidden="true" /></span><h3>No queue entries for this date</h3><p>When customers join this counter’s queue, they’ll appear here automatically.</p></div>}
+						{!isLoadingCounters && !counters.length ? <div className="employee-empty"><span><i className="fa-solid fa-building" aria-hidden="true" /></span><h3>No counter is assigned</h3><p>Your employee account is valid, but no service counter is currently assigned to it. Ask an administrator to assign a counter.</p></div> : (isLoadingCounters || isLoading) && !items.length ? <div className="employee-empty employee-empty--compact"><i className="fa-solid fa-circle-notch fa-spin" aria-hidden="true" /><p>Loading today’s queue…</p></div> : <div className="employee-queue-groups">
+							<section className="employee-queue-group"><header><div><h3>Arrived members</h3><span>{arrivedCount} ready, ordered by queue position</span></div></header>{arrivedItems.length ? <QueueTable items={arrivedItems} busyMemberId={busyMemberId} onAction={handleEntryAction} /> : <p className="employee-group-empty">No arrived members are ready to serve.</p>}</section>
+							<section className="employee-queue-group"><header><div><h3>Currently serving</h3><span>{servingCount} in service</span></div></header>{servingItems.length ? <QueueTable items={servingItems} busyMemberId={busyMemberId} onAction={handleEntryAction} /> : <p className="employee-group-empty">No customer is currently being served.</p>}</section>
+							<section className="employee-queue-group"><header><div><h3>Waiting to arrive</h3><span>{waitingItems.length} still waiting</span></div></header>{waitingItems.length ? <QueueTable items={waitingItems} busyMemberId={busyMemberId} onAction={handleEntryAction} /> : <p className="employee-group-empty">No one is waiting for arrival.</p>}</section>
+						</div>}
 					</section>
 				</main>
 				<footer className="dashboard-footer"><span>QMate employee desk</span><span><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Employee workspace</span></footer>

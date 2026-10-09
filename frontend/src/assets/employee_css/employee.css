@@ -68,6 +68,16 @@
 .employee-dashboard .employee-queue-section { min-height: 420px; padding: 22px 24px; }
 .employee-dashboard .employee-queue-heading { align-items: center; }
 .employee-dashboard .employee-queue-heading .dashboard-eyebrow { margin-bottom: 7px; }
+.employee-queue-actions { display: flex; align-items: center; gap: 8px; }
+.employee-next-button { display: inline-flex; min-height: 38px; align-items: center; gap: 10px; padding: 0 13px; border: 0; border-radius: 7px; background: #398653; color: white; cursor: pointer; font-size: 11px; font-weight: 700; }
+.employee-next-button:hover { background: #2d7446; }
+.employee-next-button:disabled { cursor: not-allowed; opacity: .48; }
+.employee-queue-groups { display: grid; gap: 13px; }
+.employee-queue-group { overflow: hidden; border: 1px solid #e9f0e8; border-radius: 8px; background: rgba(255,255,255,.72); }
+.employee-queue-group > header { display: flex; min-height: 55px; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #edf2ec; background: #fbfdfb; }
+.employee-queue-group > header h3 { margin: 0; color: #394c3d; font: 700 13px 'Manrope', sans-serif; }
+.employee-queue-group > header span { display: block; margin-top: 4px; color: #849185; font-size: 10px; }
+.employee-group-empty { margin: 0; padding: 18px 13px; color: #8a968b; font-size: 11px; }
 .employee-dashboard .employee-office-label { margin: 5px 0 0; color: #819083; font-size: 12px; }
 .employee-dashboard .employee-refresh { display: grid; width: 38px; aspect-ratio: 1; place-items: center; border: 1px solid #dce9dc; border-radius: 8px; background: #f8fcf8; color: #548760; cursor: pointer; }
 .employee-dashboard .employee-refresh:hover { border-color: #b8d4bb; background: #eff7ef; }
@@ -128,6 +138,8 @@
 	.employee-dashboard .employee-queue-section { padding: 17px 12px; }
 	.employee-dashboard .employee-queue-heading { padding: 0 3px; }
 	.employee-dashboard .employee-queue-heading h2 { font-size: 18px; }
+	.employee-next-button { min-height: 35px; gap: 6px; padding: 0 9px; font-size: 10px; }
+	.employee-queue-actions { gap: 6px; }
 	.employee-queue-controls { align-items: stretch; gap: 9px; margin-top: 17px; }
 	.employee-control { min-width: calc(50% - 5px); }
 	.employee-control select, .employee-control input { width: 100%; }
