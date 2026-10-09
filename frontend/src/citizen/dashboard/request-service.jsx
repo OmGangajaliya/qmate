@@ -29,12 +29,18 @@ const RequestService = () => {
 	const [calendarMonth, setCalendarMonth] = useState(new Date(today.getFullYear(), today.getMonth(), 1))
 	const [holidays, setHolidays] = useState([])
 	const [availability, setAvailability] = useState(null)
+	const [officeHoursResult, setOfficeHoursResult] = useState({ key: '', data: null, error: '' })
 	const [booking, setBooking] = useState(null)
 	const [error, setError] = useState('')
 	const [loadingCounters, setLoadingCounters] = useState(true)
 	const [loadingServices, setLoadingServices] = useState(false)
 	const [loadingAvailability, setLoadingAvailability] = useState(false)
 	const [joining, setJoining] = useState(false)
+	const effectiveDate = dateChoice === 'today' ? todayValue : selectedDate
+	const officeHoursKey = `${counterId}:${effectiveDate}`
+	const currentOfficeHours = officeHoursResult.key === officeHoursKey ? officeHoursResult.data : null
+	const officeHoursError = officeHoursResult.key === officeHoursKey ? officeHoursResult.error : ''
+	const checkingOfficeHours = Boolean(counterId) && officeHoursResult.key !== officeHoursKey
 
 	useEffect(() => {
 		let isMounted = true
@@ -55,6 +61,21 @@ const RequestService = () => {
 			.catch((requestError) => { if (isMounted) setError(requestError.message) })
 		return () => { isMounted = false }
 	}, [counterId, maximumDate, todayValue])
+
+	useEffect(() => {
+		if (!counterId) return undefined
+
+		let isCurrent = true
+		const query = new URLSearchParams({ counterId, date: effectiveDate })
+		queueApiRequest(`/api/queue/availability?${query}`)
+			.then((result) => {
+				if (isCurrent) setOfficeHoursResult({ key: officeHoursKey, data: result, error: '' })
+			})
+			.catch((requestError) => {
+				if (isCurrent) setOfficeHoursResult({ key: officeHoursKey, data: null, error: requestError.message })
+			})
+		return () => { isCurrent = false }
+	}, [counterId, effectiveDate, officeHoursKey])
 
 	const handleCounterChange = async (event) => {
 		const nextCounterId = event.target.value
@@ -90,7 +111,6 @@ const RequestService = () => {
 	const lastAllowedDate = addOneMonth(today)
 	const lastAllowedMonth = `${lastAllowedDate.getFullYear()}-${String(lastAllowedDate.getMonth() + 1).padStart(2, '0')}`
 	const selectedHoliday = holidayByDate.get(dateChoice === 'today' ? todayValue : selectedDate)
-	const effectiveDate = dateChoice === 'today' ? todayValue : selectedDate
 	const changeDateChoice = (choice) => {
 		setDateChoice(choice)
 		setSelectedDate(todayValue)
@@ -103,6 +123,10 @@ const RequestService = () => {
 		setError('')
 		setAvailability(null)
 		setBooking(null)
+		if (currentOfficeHours?.canJoin === false) {
+			setError(currentOfficeHours.message)
+			return
+		}
 		if (selectedHoliday) {
 			setError(`This counter is closed for a holiday${selectedHoliday.remarks ? `: ${selectedHoliday.remarks}` : '.'}`)
 			return
@@ -197,7 +221,11 @@ const RequestService = () => {
 						{dateChoice === 'today' && selectedHoliday && <div className="selected-holiday-note"><i className="fa-solid fa-calendar-xmark" aria-hidden="true" /><span>Today is marked as a holiday{selectedHoliday.remarks ? `: ${selectedHoliday.remarks}` : ''}.</span></div>}
 
 						{error && <p className="request-error" role="alert"><i className="fa-solid fa-circle-exclamation" aria-hidden="true" />{error}</p>}
-						<button className="request-search-button" type="button" onClick={searchQueue} disabled={!counterId || !serviceId || loadingAvailability || joining || Boolean(selectedHoliday) || (dateChoice === 'specific' && (!selectedDate || selectedDate > maximumDate))}><span>{loadingAvailability ? 'Checking the queue…' : 'Search queue'}</span><i className={`fa-solid ${loadingAvailability ? 'fa-spinner fa-spin' : 'fa-magnifying-glass'}`} aria-hidden="true" /></button>
+						{checkingOfficeHours && <p className="office-hours-note" role="status"><i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />Checking this counter’s hours…</p>}
+						{officeHoursError && <p className="request-error" role="alert"><i className="fa-solid fa-circle-exclamation" aria-hidden="true" />{officeHoursError}</p>}
+						{currentOfficeHours?.officeHours && <p className="office-hours-note"><i className="fa-regular fa-clock" aria-hidden="true" /><span>Office hours: {formatOfficeTime(currentOfficeHours.officeHours.opening)}–{formatOfficeTime(currentOfficeHours.officeHours.closing)} ({currentOfficeHours.officeHours.timezone})</span></p>}
+						{currentOfficeHours?.message && <p className="request-hours-error" role="status"><i className="fa-solid fa-circle-info" aria-hidden="true" />{currentOfficeHours.message}</p>}
+						<button className="request-search-button" type="button" onClick={searchQueue} disabled={!counterId || !serviceId || checkingOfficeHours || loadingAvailability || joining || currentOfficeHours?.canJoin === false || Boolean(selectedHoliday) || (dateChoice === 'specific' && (!selectedDate || selectedDate > maximumDate))}><span>{loadingAvailability ? 'Checking the queue…' : currentOfficeHours?.canJoin === false ? 'Outside office hours' : 'Search queue'}</span><i className={`fa-solid ${loadingAvailability || checkingOfficeHours ? 'fa-spinner fa-spin' : currentOfficeHours?.canJoin === false ? 'fa-clock' : 'fa-magnifying-glass'}`} aria-hidden="true" /></button>
 					</section>
 
 					<aside className="request-side-note">

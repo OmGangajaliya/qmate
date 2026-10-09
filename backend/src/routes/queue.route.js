@@ -306,27 +306,46 @@ router.get('/holidays', async (request, response) => {
 
 router.get('/availability', async (request, response) => {
 	const counterId = Number(request.query.counterId)
-	const serviceId = Number(request.query.serviceId)
 	const date = request.query.date
+	const serviceId = request.query.serviceId ? Number(request.query.serviceId) : null
 	const dateError = validateBookingDate(date)
-	if (!Number.isSafeInteger(counterId) || counterId < 1 || !Number.isSafeInteger(serviceId) || serviceId < 1 || dateError) {
+	if (!Number.isSafeInteger(counterId) || counterId < 1
+		|| (serviceId !== null && (!Number.isSafeInteger(serviceId) || serviceId < 1))
+		|| dateError) {
 		return response.status(400).json({ message: dateError || 'Select a valid counter and service.' })
 	}
 
 	const client = await pool.connect()
 	try {
-		const { rows: selectedRows } = await client.query(
-			`SELECT c.counter_id, c.counter_name, go.buffer_time_minutes,
-			        go.opening_time, go.closing_time, s.service_id, s.service_name
+		const { rows: counterRows } = await client.query(
+			`SELECT c.counter_id, c.counter_name, go.gov_id, go.buffer_time_minutes,
+			        go.opening_time, go.closing_time
 			 FROM counters c
 			 JOIN employees e ON e.employee_id = c.employee_id
 			 JOIN government_office go ON go.gov_id = e.gov_id
-			 JOIN services s ON s.counter_id = c.counter_id
-			 WHERE c.counter_id = $1 AND s.service_id = $2`,
+			 WHERE c.counter_id = $1`,
+			[counterId],
+		)
+		if (!counterRows.length) return response.status(404).json({ message: 'That service counter is not available.' })
+		const counter = counterRows[0]
+		const officeHours = await getOfficeHours(client, date, counter.opening_time, counter.closing_time)
+		const officeHoursResult = {
+			canJoin: officeHours.withinHours,
+			officeHours: { opening: officeHours.openingTime, closing: officeHours.closingTime, timezone: officeTimezone },
+			message: officeHours.message,
+		}
+
+		if (serviceId === null) {
+			return response.json({ available: true, date, counter: { id: counter.counter_id, name: counter.counter_name }, ...officeHoursResult })
+		}
+
+		const { rows: serviceRows } = await client.query(
+			`SELECT service_id, service_name
+			 FROM services
+			 WHERE counter_id = $1 AND service_id = $2`,
 			[counterId, serviceId],
 		)
-		if (!selectedRows.length) return response.status(404).json({ message: 'That service is not available at this counter.' })
-		const officeHours = await getOfficeHours(client, date, selectedRows[0].opening_time, selectedRows[0].closing_time)
+		if (!serviceRows.length) return response.status(404).json({ message: 'That service is not available at this counter.' })
 
 		const holiday = await getCounterHoliday(client, counterId, date)
 		if (holiday) {
@@ -343,17 +362,15 @@ router.get('/availability', async (request, response) => {
 			[counterId, date],
 		)
 		const estimate = queueRows.length
-			? await getQueueEstimate(client, queueRows[0].queue_id, selectedRows[0].buffer_time_minutes)
-			: { peopleWaiting: 0, rawWaitMinutes: 0, bufferMinutes: minutesFromBuffer(selectedRows[0].buffer_time_minutes), estimatedWaitMinutes: 0 }
+			? await getQueueEstimate(client, queueRows[0].queue_id, counter.buffer_time_minutes)
+			: { peopleWaiting: 0, rawWaitMinutes: 0, bufferMinutes: minutesFromBuffer(counter.buffer_time_minutes), estimatedWaitMinutes: 0 }
 
 		return response.json({
 			available: true,
 			date,
-			counter: { id: selectedRows[0].counter_id, name: selectedRows[0].counter_name },
-			service: { id: selectedRows[0].service_id, name: selectedRows[0].service_name },
-			canJoin: officeHours.withinHours,
-			officeHours: { opening: officeHours.openingTime, closing: officeHours.closingTime, timezone: officeTimezone },
-			message: officeHours.message,
+			counter: { id: counter.counter_id, name: counter.counter_name },
+			service: { id: serviceRows[0].service_id, name: serviceRows[0].service_name },
+			...officeHoursResult,
 			...estimate,
 		})
 	} catch (error) {
