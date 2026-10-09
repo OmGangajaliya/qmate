@@ -14,7 +14,7 @@ const issueToken = (user) => jwt.sign(
 	{
 		subject: String(user.user_id),
 		issuer: 'qmate-api',
-		audience: user.role === 'employee' ? 'qmate-employee' : 'qmate-citizen',
+		audience: user.role === 'admin' ? 'qmate-admin' : user.role === 'employee' ? 'qmate-employee' : 'qmate-citizen',
 		expiresIn: '2h',
 	},
 )
@@ -149,6 +149,40 @@ router.post('/employee/login', async (request, response) => {
 		})
 	} catch (error) {
 		console.error('Employee login failed:', error.message)
+		return response.status(500).json({ message: 'Unable to sign in right now.' })
+	}
+})
+
+router.post('/admin/login', async (request, response) => {
+	if (!requireJwtSecret(response)) return
+
+	const phone = typeof request.body?.phone === 'string'
+		? request.body.phone.trim().replace(/[\s()-]/g, '')
+		: ''
+	const password = typeof request.body?.password === 'string' ? request.body.password : ''
+	if (!validPhone(phone) || !password || Buffer.byteLength(password, 'utf8') > 72) {
+		return response.status(400).json({ message: 'Enter a valid phone number and password.' })
+	}
+
+	try {
+		const { rows } = await pool.query(
+			`SELECT user_id, user_name, phone, password_hash, role
+			 FROM users WHERE phone = $1 AND role = 'admin'`,
+			[phone],
+		)
+		const admin = rows[0]
+		const passwordMatches = admin ? await bcrypt.compare(password, admin.password_hash) : false
+		if (!admin || !passwordMatches) {
+			return response.status(401).json({ message: 'Admin phone number or password is incorrect.' })
+		}
+
+		return response.json({
+			message: 'Signed in successfully.',
+			token: issueToken(admin),
+			user: { id: admin.user_id, name: admin.user_name, phone: admin.phone, role: admin.role },
+		})
+	} catch (error) {
+		console.error('Admin login failed:', error.message)
 		return response.status(500).json({ message: 'Unable to sign in right now.' })
 	}
 })
