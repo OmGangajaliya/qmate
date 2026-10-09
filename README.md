@@ -77,6 +77,9 @@ npm run preview
 ```bash
 cd backend
 npm install
+npm run dev
 ```
 
-The backend currently has no `start` or `dev` script. Add the server implementation and required environment configuration before attempting to run the API.
+Set `DATABASE_URL` to the PostgreSQL connection string from Render in the backend environment. Set `DB_SSL=true` for the Render database connection; for local PostgreSQL, copy `backend/.env.example` to `backend/.env` and set its connection string and SSL preference. Keep `.env` out of version control.
+
+The API checks the database connection before listening and exposes `GET /health` as a database health check. On Render, add `DATABASE_URL` and `DB_SSL=true` under the backend web service's environment variables, then use `npm start` as the start command.

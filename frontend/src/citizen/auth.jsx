@@ -75,8 +75,10 @@ const CitizenAuth = () => {
 					<div className="orbit-ring orbit-ring--middle" />
 					<div className="orbit-ring orbit-ring--inner" />
 					<div className="orbit-core">
-						<div className="core-icon"><i className="fa-solid fa-arrow-right-to-bracket" /></div>
-						<span className="core-caption">YOUR PLACE, MADE SIMPLE</span>
+						<div className="orbit-core-content">
+							<div className="core-icon"><i className="fa-solid fa-arrow-right-to-bracket" /></div>
+							<span className="core-caption">YOUR PLACE, MADE SIMPLE</span>
+						</div>
 					</div>
 					<div className="art-note art-note--top">
 						<span className="note-icon"><i className="fa-solid fa-clock" /></span>
@@ -150,7 +152,7 @@ const CitizenAuth = () => {
 							</span>
 						</label>
 
-						{isSignup ? (
+						{isSignup && (
 							<label className="field">
 								<span>Confirm password</span>
 								<span className="input-wrap">
@@ -158,11 +160,6 @@ const CitizenAuth = () => {
 									<input autoComplete="new-password" name="confirmPassword" placeholder="Enter your password again" type={showPassword ? 'text' : 'password'} minLength="8" required />
 								</span>
 							</label>
-						) : (
-							<div className="form-options">
-								<label className="check-label"><input type="checkbox" name="remember" /><span>Keep me signed in</span></label>
-								<button className="text-button" type="button" onClick={() => setMessage('For help accessing your account, contact your local QMate service desk.')}>Forgot password?</button>
-							</div>
 						)}
 
 						{isSignup && (
