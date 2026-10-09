@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import '../assets/citizen_css/auth.css'
 import { authenticateCitizen } from './authApi.js'
 
@@ -190,6 +190,7 @@ const CitizenAuth = () => {
 					</form>
 
 					<p className="form-footnote"><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Your personal details stay private and protected.</p>
+					<p className="panel-switch-link">Working at a service counter? <Link to="/employee/auth">Employee sign in</Link></p>
 				</div>
 
 				<div className="form-footer"><span>© 2026 QMate</span><span><i className="fa-solid fa-circle" aria-hidden="true" /> Citizen portal</span></div>

@@ -14,7 +14,7 @@ const issueToken = (user) => jwt.sign(
 	{
 		subject: String(user.user_id),
 		issuer: 'qmate-api',
-		audience: 'qmate-citizen',
+		audience: user.role === 'employee' ? 'qmate-employee' : 'qmate-citizen',
 		expiresIn: '2h',
 	},
 )
@@ -102,6 +102,53 @@ router.post('/login', async (request, response) => {
 		})
 	} catch (error) {
 		console.error('Citizen login failed:', error.message)
+		return response.status(500).json({ message: 'Unable to sign in right now.' })
+	}
+})
+
+router.post('/employee/login', async (request, response) => {
+	if (!requireJwtSecret(response)) return
+
+	const phone = typeof request.body?.phone === 'string'
+		? request.body.phone.trim().replace(/[\s()-]/g, '')
+		: ''
+	const password = typeof request.body?.password === 'string' ? request.body.password : ''
+
+	if (!validPhone(phone) || !password || Buffer.byteLength(password, 'utf8') > 72) {
+		return response.status(400).json({ message: 'Enter a valid phone number and password.' })
+	}
+
+	try {
+		const { rows } = await pool.query(
+			`SELECT u.user_id, u.user_name, u.phone, u.password_hash, u.role,
+			        e.employee_id, go.gov_name
+			 FROM users u
+			 JOIN employees e ON e.user_id = u.user_id
+			 JOIN government_office go ON go.gov_id = e.gov_id
+			 WHERE u.phone = $1 AND u.role = 'employee'`,
+			[phone],
+		)
+		const user = rows[0]
+		const passwordMatches = user ? await bcrypt.compare(password, user.password_hash) : false
+
+		if (!user || !passwordMatches) {
+			return response.status(401).json({ message: 'Employee phone number or password is incorrect.' })
+		}
+
+		return response.status(200).json({
+			message: 'Signed in successfully.',
+			token: issueToken(user),
+			user: {
+				id: user.user_id,
+				employeeId: user.employee_id,
+				name: user.user_name,
+				phone: user.phone,
+				role: user.role,
+				officeName: user.gov_name,
+			},
+		})
+	} catch (error) {
+		console.error('Employee login failed:', error.message)
 		return response.status(500).json({ message: 'Unable to sign in right now.' })
 	}
 })

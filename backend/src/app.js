@@ -3,6 +3,7 @@ const cors = require('cors')
 const { pool } = require('./db/connectdb')
 const authRoutes = require('./routes/auth.route')
 const queueRoutes = require('./routes/queue.route')
+const employeeRoutes = require('./routes/employee.route')
 
 const app = express()
 const allowedOrigins = new Set(
@@ -18,6 +19,7 @@ app.use(cors({
 app.use(express.json())
 app.use('/api/auth', authRoutes)
 app.use('/api/queue', queueRoutes)
+app.use('/api/employee', employeeRoutes)
 
 app.get('/health', async (_request, response) => {
 	try {
