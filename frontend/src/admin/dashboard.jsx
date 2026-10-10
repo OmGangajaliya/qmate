@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import '../assets/admin_css/admin.css'
 import { adminApiRequest } from './adminApi.js'
 import GeofencePreviewMap from './GeofencePreviewMap.jsx'
@@ -17,18 +17,18 @@ const emptyOffice = {
 }
 
 const navigation = [
-	{ id: 'overview', label: 'Overview', icon: 'fa-chart-pie' },
-	{ id: 'offices', label: 'Government offices', icon: 'fa-building-columns' },
-	{ id: 'employees', label: 'Employees', icon: 'fa-users' },
-	{ id: 'analytics', label: 'Analytics', icon: 'fa-chart-line' },
-	{ id: 'reports', label: 'Employee report', icon: 'fa-file-lines' },
+	{ id: 'overview', label: 'Overview', path: '/admin/dashboard', icon: 'fa-chart-pie' },
+	{ id: 'offices', label: 'Government offices', path: '/admin/offices', icon: 'fa-building-columns' },
+	{ id: 'employees', label: 'Employees', path: '/admin/employees', icon: 'fa-users' },
+	{ id: 'analytics', label: 'Analytics', path: '/admin/analytics', icon: 'fa-chart-line' },
+	{ id: 'reports', label: 'Employee report', path: '/admin/reports', icon: 'fa-file-lines' },
 ]
 
 const AdminDashboard = () => {
 	const [session] = useState(() => {
 		try { return JSON.parse(sessionStorage.getItem('qmate.admin.auth') || 'null') } catch { return null }
 	})
-	const [section, setSection] = useState('overview')
+	const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 	const [offices, setOffices] = useState([])
 	const [officeHoursConfigured, setOfficeHoursConfigured] = useState(true)
 	const [employees, setEmployees] = useState([])
@@ -48,6 +48,8 @@ const AdminDashboard = () => {
 	const [notice, setNotice] = useState('')
 	const [refreshTick, setRefreshTick] = useState(0)
 	const navigate = useNavigate()
+	const location = useLocation()
+	const section = navigation.find((item) => item.path === location.pathname)?.id || 'overview'
 	const user = session?.user
 	const firstName = user?.name?.trim().split(/\s+/)[0] || 'Admin'
 	const activeQueues = analytics?.summary?.total_visits || 0
@@ -208,15 +210,16 @@ const AdminDashboard = () => {
 
 	return (
 		<div className="admin-app">
-			<aside className="admin-sidebar">
-				<a className="admin-brand" href="/admin/dashboard" aria-label="QMate admin console"><span className="admin-brand-mark"><i className="fa-solid fa-ticket" aria-hidden="true" /></span><span>QMate<span className="admin-brand-period">.</span></span></a>
+			<aside className={`admin-sidebar${mobileMenuOpen ? ' is-open' : ''}`}>
+				<a className="admin-brand" href="/admin/dashboard" aria-label="QMate admin console" onClick={() => setMobileMenuOpen(false)}><span className="admin-brand-mark"><i className="fa-solid fa-ticket" aria-hidden="true" /></span><span>QMate<span className="admin-brand-period">.</span></span></a>
 				<p className="admin-nav-label">ADMINISTRATION</p>
-				<nav className="admin-navigation" aria-label="Admin sections">{navigation.map((item) => <button key={item.id} className={`admin-nav-link${section === item.id ? ' is-active' : ''}`} type="button" title={item.label} onClick={() => { setSection(item.id); setError(''); setNotice('') }}><i className={`fa-solid ${item.icon}`} aria-hidden="true" /><span>{item.label}</span></button>)}</nav>
+				<nav className="admin-navigation" aria-label="Admin sections">{navigation.map((item) => <NavLink key={item.id} to={item.path} end className={({ isActive }) => `admin-nav-link${isActive ? ' is-active' : ''}`} title={item.label} onClick={() => { setMobileMenuOpen(false); setError(''); setNotice('') }}><i className={`fa-solid ${item.icon}`} aria-hidden="true" /><span>{item.label}</span></NavLink>)}</nav>
 				<div className="admin-sidebar-bottom"><div className="admin-user"><span className="admin-user-avatar">{firstName.slice(0, 1).toUpperCase()}</span><span><strong>{user?.name || 'Administrator'}</strong><small>System administrator</small></span></div><button className="admin-signout" type="button" onClick={signOut}><i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true" /><span>Sign out</span></button></div>
 			</aside>
+			{mobileMenuOpen && <button className="admin-sidebar-backdrop" type="button" aria-label="Close navigation menu" onClick={() => setMobileMenuOpen(false)} />}
 
 			<div className="admin-workspace">
-				<header className="admin-topbar"><div><span className="admin-topbar-label">Q MATE / ADMIN</span><strong>{user?.name || 'Administrator'} · Operations console</strong></div><div className="admin-topbar-actions"><span className="admin-topbar-date">{new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(new Date())}</span><span className="admin-user-avatar">{firstName.slice(0, 1).toUpperCase()}</span></div></header>
+				<header className="admin-topbar"><button className="admin-menu-button" type="button" aria-label="Open navigation menu" aria-expanded={mobileMenuOpen} onClick={() => setMobileMenuOpen(true)}><i className="fa-solid fa-bars" aria-hidden="true" /></button><div className="admin-topbar-identity"><span className="admin-topbar-label">Q MATE / ADMIN</span><strong>{user?.name || 'Administrator'} · Operations console</strong></div><div className="admin-topbar-actions"><span className="admin-topbar-date">{new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }).format(new Date())}</span><span className="admin-user-avatar">{firstName.slice(0, 1).toUpperCase()}</span></div></header>
 				<main className="admin-main">
 					<section className="admin-page-heading"><div><p className="admin-eyebrow">{pageCopy[0]}</p><h1>{section === 'overview' ? `${pageCopy[1]} ${firstName}.` : pageCopy[1]}</h1><p>{pageCopy[2]}</p></div>{section === 'employees' && <button className="admin-primary-button" type="button" onClick={() => document.getElementById('admin-employee-form')?.scrollIntoView({ behavior: 'smooth', block: 'center' })}><i className="fa-solid fa-user-plus" aria-hidden="true" /> Add employee</button>}</section>
 					{error && <p className="admin-feedback admin-feedback--error" role="alert"><i className="fa-solid fa-triangle-exclamation" aria-hidden="true" />{error}</p>}
@@ -273,7 +276,6 @@ const AdminDashboard = () => {
 						{section === 'analytics' && <div className="admin-section-stack"><section className="admin-metric-grid"><article className="admin-metric"><span className="admin-metric-icon"><i className="fa-solid fa-ticket" /></span><div><span>Total visits</span><strong>{analytics?.summary?.total_visits || 0}</strong><small>Selected date range</small></div></article><article className="admin-metric"><span className="admin-metric-icon"><i className="fa-solid fa-circle-check" /></span><div><span>Completed</span><strong>{analytics?.summary?.completed_visits || 0}</strong><small>{completionRate}% completion</small></div></article><article className="admin-metric"><span className="admin-metric-icon"><i className="fa-solid fa-ban" /></span><div><span>Cancelled / no-show</span><strong>{analytics?.summary?.cancelled_visits || 0}</strong><small>Terminal non-completions</small></div></article><article className="admin-metric"><span className="admin-metric-icon"><i className="fa-solid fa-user-group" /></span><div><span>Unique citizens</span><strong>{analytics?.summary?.unique_citizens || 0}</strong><small>Served or queued</small></div></article></section><div className="admin-content-grid"><section className="admin-panel"><header className="admin-panel-header"><div><h2>Visits by day</h2><p>Completed visits are shown in the detail tooltip.</p></div></header><div className="admin-panel-body">{analytics?.daily?.length ? <div className="admin-chart">{analytics.daily.map((item) => <div className="admin-bar-item" title={`${item.date}: ${item.visits} visits, ${item.completed} completed`} key={item.date}><div className="admin-bar-track"><span className="admin-bar" style={{ height: `${Math.max(4, (item.visits / maxDailyVisits) * 100)}%` }} /></div><small>{item.date.slice(5)}</small></div>)}</div> : <div className="admin-empty"><i className="fa-solid fa-chart-column" /><p>No queue activity in this range.</p></div>}</div></section><section className="admin-panel"><header className="admin-panel-header"><div><h2>Office comparison</h2><p>Queue volume and completions</p></div></header><div className="admin-panel-body"><div className="admin-list">{analytics?.offices?.map((office) => <div className="admin-list-row" key={office.office_name}><strong>{office.office_name}</strong><span>{office.completed}/{office.visits} visits</span></div>)}</div></div></section></div></div>}
 						{section === 'reports' && <section className="admin-panel"><header className="admin-panel-header"><div><h2>Employee service report</h2><p>Completed service records between {range.from} and {range.to}.</p></div></header><div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>Employee</th><th>Office</th><th>Completed visits</th><th>Average service</th><th>Last completion</th></tr></thead><tbody>{employeeReport.map((employee) => <tr key={employee.employee_id}><td><strong>{employee.employee_name}</strong><small>{employee.phone}</small></td><td>{employee.office_name}</td><td><span className="admin-status">{employee.completed_visits}</span></td><td>{employee.average_service_minutes ? `${employee.average_service_minutes} min` : '—'}</td><td>{employee.last_completion ? new Intl.DateTimeFormat('en', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(employee.last_completion)) : '—'}</td></tr>)}</tbody></table>{!employeeReport.length && <div className="admin-empty"><i className="fa-solid fa-file-lines" /><p>No employees match this report range.</p></div>}</div></section>}
 					</>}
-					<footer className="admin-footer"><span>QMate administration console</span><span><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Restricted administrator workspace</span></footer>
 				</main>
 			</div>
 		</div>

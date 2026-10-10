@@ -180,7 +180,6 @@ const EmployeeDashboard = () => {
 						</div>}
 					</section>
 				</main>
-				<footer className="dashboard-footer"><span>QMate employee desk</span><span><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Employee workspace</span></footer>
 			</div>
 		</div>
 	)

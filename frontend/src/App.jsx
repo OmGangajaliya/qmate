@@ -59,6 +59,10 @@ const App = () => (
 		<Route path="/admin/auth" element={<AdminAuth />} />
 		<Route path="/admin" element={<Navigate to={hasValidAdminSession() ? '/admin/dashboard' : '/admin/auth'} replace />} />
 		<Route path="/admin/dashboard" element={hasValidAdminSession() ? <AdminDashboard /> : <Navigate to="/admin/auth" replace />} />
+		<Route path="/admin/offices" element={hasValidAdminSession() ? <AdminDashboard /> : <Navigate to="/admin/auth" replace />} />
+		<Route path="/admin/employees" element={hasValidAdminSession() ? <AdminDashboard /> : <Navigate to="/admin/auth" replace />} />
+		<Route path="/admin/analytics" element={hasValidAdminSession() ? <AdminDashboard /> : <Navigate to="/admin/auth" replace />} />
+		<Route path="/admin/reports" element={hasValidAdminSession() ? <AdminDashboard /> : <Navigate to="/admin/auth" replace />} />
 		<Route path="/citizen" element={hasValidCitizenSession() ? <CitizenDashboard /> : <Navigate to="/citizen/auth" replace />}>
 			<Route index element={<Navigate to="service/request" replace />} />
 			<Route path="dashboard" element={<Navigate to="/citizen/service/request" replace />} />
