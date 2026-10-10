@@ -22,7 +22,6 @@
 .admin-auth-shell .panel-switch-link, .panel-switch-link { margin: 17px 0 0; color: #8c867d; font-size: 11px; text-align: center; }
 .admin-auth-shell .panel-switch-link a { color: #c66b32; font-weight: 700; text-decoration: none; }
 .admin-auth-shell .panel-switch-link a:hover { text-decoration: underline; }
-
 .admin-app { --admin-ink:#27372c; --admin-muted:#7c8a7f; --admin-line:#e5ece5; --admin-green:#347a4c; --admin-orange:#d97736; display:grid; min-height:100vh; grid-template-columns:242px minmax(0,1fr); background:#f5f8f5; color:var(--admin-ink); font-family:'DM Sans',sans-serif; }
 .admin-sidebar { position:fixed; inset:0 auto 0 0; display:flex; width:242px; flex-direction:column; padding:25px 16px 18px; background:#1d422f; color:#fff; }
 .admin-brand { display:flex; align-items:center; gap:10px; margin:0 0 43px 6px; color:white; font:800 20px 'Manrope',sans-serif; text-decoration:none; }
@@ -369,4 +368,42 @@
 	.admin-sidebar { position: sticky; inset: auto; width: 100%; border-bottom-color: #e5eee5; background: rgba(251, 253, 251, .98); }
 	.admin-signout { border-color: #dce9dc; color: #398653; }
 	.admin-nav-link:hover, .admin-nav-link.is-active { border-color: #dcebdc; background: #eaf4eb; color: #327548; }
+}
+
+.admin-geofence-editor { display: grid; gap: 10px; }
+.admin-geofence-editor-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; color: #354438; font-size: 13px; font-weight: 700; }
+.admin-geofence-capture { padding: 13px; border: 1px solid #e5eee5; border-radius: 7px; background: #fbfdfb; }
+.admin-geofence-capture > .admin-inline-help { margin: 0 0 11px; font-size: 11px; }
+.admin-geofence-points { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; counter-reset: none; }
+.admin-geofence-points li { display: grid; min-height: 48px; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 7px 9px; border: 1px solid #e8eee8; border-radius: 6px; background: white; }
+.admin-geofence-point-label { color: #398653; font: 700 12px 'Manrope', sans-serif; }
+.admin-geofence-point-value { min-width: 0; color: #657568; font: 11px Consolas, monospace; overflow-wrap: anywhere; }
+.admin-geofence-points li.is-captured .admin-geofence-point-value { color: #354438; }
+.admin-geofence-points .admin-table-action { min-width: 78px; min-height: 32px; }
+.admin-geofence-points .admin-table-action:disabled { cursor: not-allowed; opacity: .55; }
+.admin-geofence-capture .admin-feedback { margin: 10px 0 0; }
+.admin-geofence-progress { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; margin-bottom: 13px; }
+.admin-geofence-progress span { display: grid; min-height: 33px; place-items: center; border: 1px solid #dfe9df; border-radius: 5px; background: #fff; color: #8b978d; font-size: 11px; font-weight: 700; }
+.admin-geofence-progress span.is-current { border-color: #398653; background: #eaf4eb; color: #347a4c; }
+.admin-geofence-progress span.is-done { border-color: #c8e0cb; background: #f2f8f2; color: #398653; }
+.admin-geofence-current-step { padding: 15px; border: 1px solid #e5eee5; border-radius: 7px; background: white; }
+.admin-geofence-step-kicker { margin: 0 0 5px; color: #56845e; font-size: 9px; font-weight: 700; }
+.admin-geofence-current-step h3 { margin: 0; color: #302921; font: 700 17px/1.3 'Manrope', sans-serif; }
+.admin-geofence-current-step > p:not(.admin-geofence-step-kicker):not(.admin-feedback) { max-width: 600px; margin: 7px 0 13px; color: #748176; font-size: 12px; line-height: 1.55; }
+.admin-geofence-saved-point { display: flex; align-items: center; gap: 7px; margin: 11px 0 0 !important; color: #398653 !important; font: 11px Consolas, monospace !important; }
+.admin-geofence-final > .admin-feedback { margin: 0 0 12px; }
+.admin-geofence-preview-map { width: 100%; height: 340px; overflow: hidden; border: 1px solid #dfe9df; border-radius: 7px; background: #edf3ef; }
+.admin-geofence-preview-map .leaflet-container { width: 100%; height: 100%; font-family: 'DM Sans', sans-serif; }
+.geofence-point-icon { border: 0; background: transparent; }
+.geofence-point-icon span { display: grid; width: 32px; height: 32px; place-items: center; border: 2px solid white; border-radius: 50%; background: #347a4c; box-shadow: 0 2px 8px rgba(28, 56, 34, .35); color: white; font: 700 11px 'DM Sans', sans-serif; }
+.admin-geofence-final > .admin-table-action { margin-top: 11px; }
+.admin-geofence-coordinates { display: grid; gap: 5px; margin: 12px 0 0; padding: 0; list-style: none; }
+.admin-geofence-coordinates li { display: flex; align-items: center; gap: 10px; color: #657568; font: 11px Consolas, monospace; }
+.admin-geofence-coordinates strong { width: 25px; color: #398653; font-family: 'DM Sans', sans-serif; }
+
+@media (max-width: 520px) {
+	.admin-geofence-capture { padding: 9px; }
+	.admin-geofence-points li { grid-template-columns: 30px minmax(0, 1fr); gap: 6px 8px; }
+	.admin-geofence-points .admin-table-action { grid-column: 2; justify-self: start; }
+	.admin-geofence-preview-map { height: 285px; }
 }
