@@ -227,14 +227,6 @@ const RequestService = () => {
 						{currentOfficeHours?.message && <p className="request-hours-error" role="status"><i className="fa-solid fa-circle-info" aria-hidden="true" />{currentOfficeHours.message}</p>}
 						<button className="request-search-button" type="button" onClick={searchQueue} disabled={!counterId || !serviceId || checkingOfficeHours || loadingAvailability || joining || currentOfficeHours?.canJoin === false || Boolean(selectedHoliday) || (dateChoice === 'specific' && (!selectedDate || selectedDate > maximumDate))}><span>{loadingAvailability ? 'Checking the queue…' : currentOfficeHours?.canJoin === false ? 'Outside office hours' : 'Search queue'}</span><i className={`fa-solid ${loadingAvailability || checkingOfficeHours ? 'fa-spinner fa-spin' : currentOfficeHours?.canJoin === false ? 'fa-clock' : 'fa-magnifying-glass'}`} aria-hidden="true" /></button>
 					</section>
-
-					<aside className="request-side-note">
-						<span className="request-note-icon"><i className="fa-solid fa-hourglass-half" aria-hidden="true" /></span>
-						<p className="dashboard-eyebrow">PLAN AHEAD</p>
-						<h2>Less waiting.<br />More certainty.</h2>
-						<p>Check the live queue estimate before you decide to join. Bookings are available up to one month ahead.</p>
-						<div className="privacy-note"><i className="fa-solid fa-shield-halved" aria-hidden="true" /><span>Your place is linked securely to your citizen account.</span></div>
-					</aside>
 				</div>
 			)}
 
