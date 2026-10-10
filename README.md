@@ -88,7 +88,7 @@ The API checks the database connection before listening and exposes `GET /health
 
 The administrator console is available at `/admin/auth`. It supports government-office management, employee and counter creation, queue analytics, and employee completion reports. Admin accounts are not self-registered. To provision the first admin, configure `DATABASE_URL`, `ADMIN_NAME`, `ADMIN_PHONE`, and `ADMIN_PASSWORD` in the backend environment, then run `node src/scripts/create-admin.js` from `backend/`. The script refuses to change an existing account and does not print the password.
 
-The admin office editor requires `opening_time` and `closing_time` columns on `government_office`. If they are not already present in your database, apply this once before using office management:
+The admin office editor requires `opening_time` and `closing_time` columns on `government_office`. If they are not already present in your database, apply this once before using office management:9
 
 Before enabling citizen queue booking on an existing database, run `backend/src/db/migrations/001_queue_booking_metadata.sql` once against the Render PostgreSQL database. It ensures the office-level `buffer_time_minutes` column exists and creates the employee holiday table used to disable booking on holiday dates.
 

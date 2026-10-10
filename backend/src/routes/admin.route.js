@@ -13,16 +13,38 @@ const isValidDate = (value) => /^\d{4}-\d{2}-\d{2}$/.test(value || '')
 
 const validateGeofence = (value) => {
 	if (!Array.isArray(value) || value.length < 3) return false
-	return value.every((point) => Array.isArray(point) && point.length === 2
+	return value.every((point) => Array.isArray(point) && point.length >= 2
 		&& typeof point[0] === 'number' && Number.isFinite(point[0]) && point[0] >= -90 && point[0] <= 90
 		&& typeof point[1] === 'number' && Number.isFinite(point[1]) && point[1] >= -180 && point[1] <= 180)
 }
 
 const parseGeofence = (value) => {
-	if (typeof value === 'string') {
-		try { return JSON.parse(value) } catch { return null }
+	let geofence = value
+	while (typeof geofence === 'string') {
+		try { geofence = JSON.parse(geofence) } catch { return null }
 	}
-	return value
+	let isGeoJson = false
+	if (!Array.isArray(geofence) && geofence && typeof geofence === 'object') {
+		if (geofence.type === 'Feature') geofence = geofence.geometry
+		if (geofence?.type === 'Polygon') {
+			geofence = geofence.coordinates?.[0]
+			isGeoJson = true
+		}
+	}
+	if (!Array.isArray(geofence)) return geofence
+	if (geofence.length === 1 && Array.isArray(geofence[0]?.[0])) geofence = geofence[0]
+	return geofence.map((point) => {
+		if (point && !Array.isArray(point) && typeof point === 'object') {
+			point = [point.latitude ?? point.lat, point.longitude ?? point.lng]
+		}
+		if (!Array.isArray(point)) return point
+		const coordinates = point.slice(0, 2).map((coordinate) => {
+			if (typeof coordinate !== 'string' || !coordinate.trim()) return coordinate
+			const numericCoordinate = Number(coordinate)
+			return Number.isFinite(numericCoordinate) ? numericCoordinate : coordinate
+		})
+		return isGeoJson ? [coordinates[1], coordinates[0]] : coordinates
+	})
 }
 
 router.use(requireAdmin)
@@ -109,11 +131,20 @@ router.put('/offices/:officeId', async (request, response) => {
 	const closingTime = request.body?.closingTime
 	const bufferMinutes = Number(request.body?.bufferMinutes ?? 0)
 	const geofence = parseGeofence(request.body?.geofencePoint)
-	if (!Number.isSafeInteger(officeId) || officeId < 1 || !name || name.length > 180 || !address
-		|| phone && !validPhone(phone) || !timePattern.test(openingTime || '')
-		|| !timePattern.test(closingTime || '') || openingTime >= closingTime
-		|| !Number.isInteger(bufferMinutes) || bufferMinutes < 0 || !validateGeofence(geofence)) {
-		return response.status(400).json({ message: 'Enter valid office details and geofence coordinates.' })
+	const invalidFields = []
+	if (!Number.isSafeInteger(officeId) || officeId < 1) invalidFields.push('office id')
+	if (!name || name.length > 180) invalidFields.push('office name')
+	if (!address) invalidFields.push('address')
+	if (phone && !validPhone(phone)) invalidFields.push('contact phone')
+	const hasValidOpeningTime = timePattern.test(openingTime || '')
+	const hasValidClosingTime = timePattern.test(closingTime || '')
+	if (!hasValidOpeningTime) invalidFields.push('opening time')
+	if (!hasValidClosingTime) invalidFields.push('closing time')
+	if (hasValidOpeningTime && hasValidClosingTime && openingTime >= closingTime) invalidFields.push('office hours order')
+	if (!Number.isInteger(bufferMinutes) || bufferMinutes < 0) invalidFields.push('buffer minutes')
+	if (!validateGeofence(geofence)) invalidFields.push('geofence coordinates')
+	if (invalidFields.length) {
+		return response.status(400).json({ message: `Invalid ${invalidFields.join(', ')}. Check the office details and try again.` })
 	}
 
 	try {
