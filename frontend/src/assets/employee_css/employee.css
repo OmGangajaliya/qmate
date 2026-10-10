@@ -58,7 +58,8 @@
 .employee-dashboard .dashboard-subtitle { color: #748176; }
 .employee-dashboard .dashboard-date { color: #748176; }
 .employee-dashboard .dashboard-date i { color: #568c63; }
-.employee-dashboard .dashboard-stat, .employee-dashboard .dashboard-section { border-color: #e5eee5; background: rgba(255,255,255,.88); box-shadow: 0 7px 24px rgba(45, 79, 51, .035); }
+.employee-dashboard .dashboard-stat, .employee-dashboard .dashboard-section { min-height: 0; border-color: #e5eee5; background: rgba(255,255,255,.88); box-shadow: 0 7px 24px rgba(45, 79, 51, .035); }
+.employee-dashboard .employee-stat-grid { margin-bottom: 16px; }
 .employee-dashboard .stat-icon--orange { background: #eaf4eb; color: #398653; }
 .employee-dashboard .stat-icon--sage { background: #eef3df; color: #7d9145; }
 .employee-dashboard .stat-icon--sand { background: #e9f2f1; color: #50877d; }
@@ -72,7 +73,7 @@
 .employee-next-button { display: inline-flex; min-height: 38px; align-items: center; gap: 10px; padding: 0 13px; border: 0; border-radius: 7px; background: #398653; color: white; cursor: pointer; font-size: 11px; font-weight: 700; }
 .employee-next-button:hover { background: #2d7446; }
 .employee-next-button:disabled { cursor: not-allowed; opacity: .48; }
-.employee-queue-groups { display: grid; gap: 13px; }
+.employee-queue-groups { margin-top:10px; display: grid; gap: 13px; }
 .employee-queue-group { overflow: hidden; border: 1px solid #e9f0e8; border-radius: 8px; background: rgba(255,255,255,.72); }
 .employee-queue-group > header { display: flex; min-height: 55px; align-items: center; justify-content: space-between; padding: 10px 13px; border-bottom: 1px solid #edf2ec; background: #fbfdfb; }
 .employee-queue-group > header h3 { margin: 0; color: #394c3d; font: 700 13px 'Manrope', sans-serif; }
@@ -82,10 +83,6 @@
 .employee-dashboard .employee-refresh { display: grid; width: 38px; aspect-ratio: 1; place-items: center; border: 1px solid #dce9dc; border-radius: 8px; background: #f8fcf8; color: #548760; cursor: pointer; }
 .employee-dashboard .employee-refresh:hover { border-color: #b8d4bb; background: #eff7ef; }
 .employee-dashboard .employee-refresh:disabled { cursor: wait; opacity: .7; }
-.employee-queue-controls { display: flex; align-items: flex-end; gap: 12px; margin: 22px 0 14px; padding-bottom: 16px; border-bottom: 1px solid #eaf0e9; }
-.employee-control { display: grid; min-width: 190px; gap: 6px; color: #718073; font-size: 11px; font-weight: 600; }
-.employee-control select, .employee-control input { height: 39px; min-width: 0; padding: 0 10px; border: 1px solid #dfe9df; border-radius: 7px; outline: 0; background: #fff; color: #354438; font: 500 12px 'DM Sans', sans-serif; }
-.employee-control select:focus, .employee-control input:focus { border-color: #79ad81; box-shadow: 0 0 0 3px rgba(57, 134, 83, .1); }
 .employee-live-indicator { display: inline-flex; align-items: center; gap: 7px; margin: 0 0 11px auto; color: #849185; font-size: 10px; white-space: nowrap; }
 .employee-live-indicator i { width: 7px; aspect-ratio: 1; border-radius: 50%; background: #52a36a; box-shadow: 0 0 0 3px #e7f3e8; }
 .employee-feedback { display: flex; align-items: center; gap: 9px; margin: 0 0 13px; padding: 11px 12px; border: 1px solid; border-radius: 7px; font-size: 12px; line-height: 1.5; }
@@ -125,8 +122,6 @@
 
 @media (max-width: 900px) {
 	.employee-dashboard .employee-queue-section { padding: 19px 16px; }
-	.employee-queue-controls { flex-wrap: wrap; }
-	.employee-control { min-width: 155px; flex: 1; }
 	.employee-queue-table { min-width: 760px; }
 }
 
@@ -140,9 +135,6 @@
 	.employee-dashboard .employee-queue-heading h2 { font-size: 18px; }
 	.employee-next-button { min-height: 35px; gap: 6px; padding: 0 9px; font-size: 10px; }
 	.employee-queue-actions { gap: 6px; }
-	.employee-queue-controls { align-items: stretch; gap: 9px; margin-top: 17px; }
-	.employee-control { min-width: calc(50% - 5px); }
-	.employee-control select, .employee-control input { width: 100%; }
 	.employee-live-indicator { width: 100%; justify-content: flex-start; margin: 0; }
 	.employee-table-wrap { margin-right: -2px; }
 }
