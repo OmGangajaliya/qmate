@@ -67,7 +67,7 @@ const CitizenAuth = () => {
 		try {
 			const result = await authenticateCitizen(mode, credentials)
 			sessionStorage.setItem('qmate.auth', JSON.stringify(result))
-			window.location.replace('/citizen/dashboard')
+			window.location.replace('/citizen/service/request')
 		} catch (error) {
 			setMessage(error.message || 'Unable to reach QMate. Check your connection and try again.')
 		} finally {

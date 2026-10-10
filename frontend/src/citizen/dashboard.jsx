@@ -181,16 +181,13 @@ const CitizenDashboard = () => {
 	return (
 		<div className="citizen-dashboard">
 			<aside className={mobileMenuOpen ? 'citizen-sidebar is-open' : 'citizen-sidebar'}>
-				<a className="dashboard-brand" href="/citizen/dashboard" aria-label="QMate dashboard" onClick={closeMobileMenu}>
+				<a className="dashboard-brand" href="/citizen/service/request" aria-label="QMate citizen services" onClick={closeMobileMenu}>
 					<span className="dashboard-brand-mark"><i className="fa-solid fa-ticket" aria-hidden="true" /></span>
 					<span>QMate<span className="dashboard-brand-period">.</span></span>
 				</a>
 
 				<nav className="citizen-side-nav" aria-label="Citizen panel navigation">
 					<p className="sidebar-group-label">WORKSPACE</p>
-					<NavLink to="/citizen/dashboard" end className={({ isActive }) => `sidebar-link${isActive ? ' is-active' : ''}`} onClick={closeMobileMenu}>
-						<i className="fa-solid fa-house" aria-hidden="true" /><span>Dashboard</span>
-					</NavLink>
 					<button className={`sidebar-link sidebar-service-toggle${isServiceRoute ? ' is-active' : ''}`} type="button" aria-expanded={servicesOpen || isServiceRoute} onClick={() => setServicesOpen(!servicesOpen)}>
 						<i className="fa-solid fa-building-columns" aria-hidden="true" /><span>Services</span><i className={`fa-solid fa-chevron-down sidebar-chevron${servicesOpen || isServiceRoute ? ' is-open' : ''}`} aria-hidden="true" />
 					</button>
