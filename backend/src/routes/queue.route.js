@@ -576,32 +576,51 @@ router.post('/join', async (request, response) => {
 		const { rows: memberRows } = await client.query(
 			`INSERT INTO queue_members (queue_id, user_id, service_id, token_number, q_position, status, "date", time_given)
 			 SELECT $1, $2, $3, $4, $5, 'not arrived', $6::date,
-			        COALESCE(
-			            (
-			                SELECT qm.time_given
-			                FROM queue_members qm
-			                WHERE qm.queue_id = $1
-			                  AND qm.status NOT IN ('serving', 'completed')
-			                ORDER BY qm.q_position
-			                LIMIT 1
-			            ),
-			            ($6::date + go.opening_time)
-			        ) + make_interval(mins => COALESCE(
-			            (
-			                SELECT SUM(s.average_service_minutes)::int
-			                FROM queue_members qm
-			                JOIN services s ON s.service_id = qm.service_id
-			                WHERE qm.queue_id = $1
-			                  AND qm.status NOT IN ('serving', 'completed')
-			            ),
-			            0
+			        CASE
+			            WHEN $6::date = (now() AT TIME ZONE $8::text)::date THEN GREATEST(
+			                COALESCE(
+			                    (
+			                        SELECT qm.time_given
+			                        FROM queue_members qm
+			                        WHERE qm.queue_id = $1
+			                          AND qm.status NOT IN ('serving', 'completed', 'cancelled', 'no_show')
+			                        ORDER BY qm.q_position
+			                        LIMIT 1
+			                    ),
+			                    $6::date + go.opening_time
+			                ),
+			                now() AT TIME ZONE $8::text
+			            )
+			            ELSE COALESCE(
+			                (
+			                    SELECT qm.time_given
+			                    FROM queue_members qm
+			                    WHERE qm.queue_id = $1
+			                      AND qm.status NOT IN ('serving', 'completed', 'cancelled', 'no_show')
+			                    ORDER BY qm.q_position
+			                    LIMIT 1
+			                ),
+			                $6::date + go.opening_time
+			            )
+			        END + make_interval(mins => GREATEST(
+			            0,
+			            COALESCE(
+			                (
+			                    SELECT SUM(s.average_service_minutes)::int
+			                    FROM queue_members qm
+			                    JOIN services s ON s.service_id = qm.service_id
+			                    WHERE qm.queue_id = $1
+			                      AND qm.status NOT IN ('serving', 'completed', 'cancelled', 'no_show')
+			                ),
+			                0
+			            ) - go.buffer_time_minutes
 			        ))
 			 FROM counters c
 			 JOIN employees e ON e.employee_id = c.employee_id
 			 JOIN government_office go ON go.gov_id = e.gov_id
 			 WHERE c.counter_id = $7
 			 RETURNING member_id, token_number, q_position, status, time_given`,
-			[queueId, request.citizen.userId, serviceId, tokenNumber, position, date, counterId],
+			[queueId, request.citizen.userId, serviceId, tokenNumber, position, date, counterId, officeTimezone],
 		)
 		const estimate = await getQueueEstimate(client, queueId, selectedRows[0].buffer_time_minutes, position)
 		await client.query('COMMIT')
