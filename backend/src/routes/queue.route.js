@@ -227,31 +227,46 @@ router.delete('/entries/:memberId', async (request, response) => {
 		return response.status(400).json({ message: 'Select a valid queue entry.' })
 	}
 
+	const client = await pool.connect()
+	let transactionStarted = false
 	try {
-		const { rows } = await pool.query(
-			`UPDATE queue_members
-				 SET status = 'cancelled',
-				     "isArrived" = FALSE,
-				     arrived_at = NULL,
-				     updated_at = now()
-			 WHERE member_id = $1
-			   AND user_id = $2
-			   AND status = ANY($3::varchar[])
-			 RETURNING member_id, token_number, status`,
+		await client.query('BEGIN')
+		transactionStarted = true
+		const { rows: eligibleRows } = await client.query(
+			`SELECT member_id
+			 FROM queue_members
+			 WHERE member_id = $1 AND user_id = $2 AND status = ANY($3::varchar[])
+			 FOR UPDATE`,
 			[memberId, request.citizen.userId, cancellableStatuses],
 		)
 
-		if (!rows.length) {
+		if (!eligibleRows.length) {
+			await client.query('ROLLBACK')
+			transactionStarted = false
 			return response.status(409).json({ message: 'This queue entry cannot be exited right now.' })
 		}
+
+		await client.query('DELETE FROM citizen_locations WHERE member_id = $1', [memberId])
+		await client.query('UPDATE notifications SET members_id = NULL WHERE members_id = $1', [memberId])
+		const { rows } = await client.query(
+			`DELETE FROM queue_members
+			 WHERE member_id = $1 AND user_id = $2 AND status = ANY($3::varchar[])
+			 RETURNING member_id, token_number`,
+			[memberId, request.citizen.userId, cancellableStatuses],
+		)
+		await client.query('COMMIT')
+		transactionStarted = false
 
 		return response.json({
 			message: 'You have exited the queue.',
 			entry: rows[0],
 		})
 	} catch (error) {
+		if (transactionStarted) await client.query('ROLLBACK')
 		console.error('Unable to exit queue membership:', error.message)
 		return response.status(500).json({ message: 'Unable to exit the queue right now.' })
+	} finally {
+		client.release()
 	}
 })
 
