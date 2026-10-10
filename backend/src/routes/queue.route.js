@@ -1,7 +1,7 @@
 const express = require('express')
 const { pool } = require('../db/connectdb')
 const requireCitizen = require('../middlewares/citizen-auth.middleware')
-const { isInsideCampus } = require('../utils/geofence')
+const { isInsideCampus, normalizeCampusPolygon } = require('../utils/geofence')
 
 const router = express.Router()
 const terminalStatuses = ['completed', 'cancelled', 'no_show']
@@ -270,6 +270,43 @@ router.delete('/entries/:memberId', async (request, response) => {
 	}
 })
 
+router.get('/geofence/active', async (request, response) => {
+	const queueDate = request.query.date
+	if (!isValidDate(queueDate)) {
+		return response.status(400).json({ message: 'A valid local queue date is required.' })
+	}
+
+	try {
+		const { rows } = await pool.query(
+			`SELECT qm.member_id, go.gov_id, go.gov_name, go.geofence_point
+			 FROM queue_members qm
+			 JOIN queue q ON q.queue_id = qm.queue_id
+			 JOIN counters c ON c.counter_id = q.counter_id
+			 JOIN employees e ON e.employee_id = c.employee_id
+			 JOIN government_office go ON go.gov_id = e.gov_id
+			 WHERE qm.user_id = $1
+			   AND (qm."date" = $2::date OR q.queue_date = $2::date)
+			   AND qm.status NOT IN ('completed', 'cancelled', 'no_show')
+			 ORDER BY qm.joined_at`,
+			[request.citizen.userId, queueDate],
+		)
+		const geofences = rows.map((booking) => {
+			const boundary = normalizeCampusPolygon(booking.geofence_point)
+			if (!boundary) throw new Error(`Government office ${booking.gov_id} has an invalid campus geofence polygon.`)
+			return {
+				memberId: booking.member_id,
+				officeName: booking.gov_name,
+				boundary: boundary.map(([longitude, latitude]) => [latitude, longitude]),
+				inside: null,
+			}
+		})
+		return response.json({ geofences })
+	} catch (error) {
+		console.error('Unable to load active campus boundaries:', error.message)
+		return response.status(500).json({ message: 'Unable to load the campus boundary map.' })
+	}
+})
+
 router.post('/geofence/location', async (request, response) => {
 	const latitude = Number(request.body?.latitude)
 	const longitude = Number(request.body?.longitude)
@@ -287,22 +324,21 @@ router.post('/geofence/location', async (request, response) => {
 	if (!isValidDate(queueDate)) {
 		return response.status(400).json({ message: 'A valid local queue date is required.' })
 	}
-
 	const client = await pool.connect()
 	let transactionStarted = false
 	try {
 		await client.query('BEGIN')
 		transactionStarted = true
 		const { rows: bookings } = await client.query(
-			`SELECT qm.member_id, qm.status, go.gov_id, go.geofence_point
+			`SELECT qm.member_id, qm.status, go.gov_id, go.gov_name, go.geofence_point
 			 FROM queue_members qm
 			 JOIN queue q ON q.queue_id = qm.queue_id
 			 JOIN counters c ON c.counter_id = q.counter_id
 			 JOIN employees e ON e.employee_id = c.employee_id
 			 JOIN government_office go ON go.gov_id = e.gov_id
 			 WHERE qm.user_id = $1
-			   AND qm."date" = $2::date
-			   AND qm.status IN ('not arrived', 'arrived')
+			   AND (qm."date" = $2::date OR q.queue_date = $2::date)
+			   AND qm.status NOT IN ('completed', 'cancelled', 'no_show')
 			 FOR UPDATE OF qm`,
 			[request.citizen.userId, queueDate],
 		)
@@ -314,14 +350,22 @@ router.post('/geofence/location', async (request, response) => {
 		}
 
 		const transitions = []
+		const geofences = []
 		for (const booking of bookings) {
 			const insideCampus = isInsideCampus(latitude, longitude, booking.geofence_point)
 			if (insideCampus === null) {
 				throw new Error(`Government office ${booking.gov_id} has an invalid campus geofence polygon.`)
 			}
+			const boundary = normalizeCampusPolygon(booking.geofence_point)
+			geofences.push({
+				memberId: booking.member_id,
+				officeName: booking.gov_name,
+				boundary: boundary.map(([boundaryLongitude, boundaryLatitude]) => [boundaryLatitude, boundaryLongitude]),
+				inside: insideCampus,
+			})
 
 			const nextStatus = insideCampus ? 'arrived' : 'not arrived'
-			if (booking.status === nextStatus) continue
+			if (!['not arrived', 'arrived'].includes(booking.status) || booking.status === nextStatus) continue
 
 			await client.query(
 				`UPDATE queue_members
@@ -342,7 +386,12 @@ router.post('/geofence/location', async (request, response) => {
 
 		await client.query('COMMIT')
 		transactionStarted = false
-		return response.json({ tracking: true, transitions })
+		return response.json({
+			tracking: true,
+			transitions,
+			location: { latitude, longitude, accuracyMeters },
+			geofences,
+		})
 	} catch (error) {
 		if (transactionStarted) await client.query('ROLLBACK')
 		console.error('Unable to evaluate citizen campus geofence:', error.message)
