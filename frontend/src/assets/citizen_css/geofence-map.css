@@ -1,6 +1,8 @@
 .geofence-map-panel {
-	width: min(1180px, calc(100% - 72px));
-	margin: 18px auto 0;
+	box-sizing: border-box;
+	width: 100%;
+	min-width: 0;
+	margin: 18px 0 24px;
 	padding: 18px;
 	border: 1px solid #dfe8e4;
 	border-radius: 10px;
@@ -17,7 +19,7 @@
 
 .geofence-map-header .dashboard-eyebrow { margin-bottom: 5px; color: #568373; }
 .geofence-map-header .dashboard-eyebrow span { background: #79a997; }
-.geofence-map-header h2 { margin: 0; color: #302921; font: 700 18px/1.35 'Manrope', sans-serif; }
+.geofence-map-header h2 { margin: 0 0 0 6px; color: #302921; font: 700 18px/1.35 'Manrope', sans-serif; }
 
 .geofence-map-select-label {
 	display: flex;
@@ -45,7 +47,7 @@
 	align-items: center;
 	flex-wrap: wrap;
 	gap: 12px 20px;
-	margin: 10px 0;
+	margin: 0 0 10px 0;
 	color: #7c8580;
 	font-size: 11px;
 }
@@ -74,18 +76,14 @@
 .geofence-map-message { margin: 9px 0 0; color: #6e7974; font-size: 12px; }
 .geofence-map-error { margin: 10px 0 0; color: #a84938; font-size: 12px; }
 
-@media (max-width: 900px) {
-	.geofence-map-panel { width: calc(100% - 48px); }
-}
-
 @media (max-width: 700px) {
-	.geofence-map-panel { width: calc(100% - 36px); margin-top: 12px; padding: 14px; }
+	.geofence-map-panel { width: 100%; margin: 12px 0 20px; padding: 14px; }
 	.geofence-map-header h2 { font-size: 16px; }
 	.geofence-map-canvas { height: 300px; }
 	.geofence-map-legend { gap: 9px 14px; }
 }
 
 @media (max-width: 380px) {
-	.geofence-map-panel { width: calc(100% - 28px); padding: 12px; }
+	.geofence-map-panel { padding: 12px; }
 	.geofence-map-canvas { height: 270px; }
 }

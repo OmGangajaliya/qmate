@@ -318,8 +318,8 @@ router.post('/geofence/location', async (request, response) => {
 		|| !Number.isFinite(accuracyMeters) || accuracyMeters < 0) {
 		return response.status(400).json({ message: 'A valid GPS location and accuracy are required.' })
 	}
-	if (accuracyMeters > 50) {
-		return response.status(422).json({ message: 'GPS accuracy is too low. Move to an open area and try again.', retryable: true })
+	if (accuracyMeters > 90) {
+		return response.status(422).json({ message: 'GPS accuracy is too low (over 90 m). Move to an open area and try again.', retryable: true })
 	}
 	if (!isValidDate(queueDate)) {
 		return response.status(400).json({ message: 'A valid local queue date is required.' })

@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import '../assets/citizen_css/dashboard.css'
 import { queueApiRequest } from './queueApi.js'
-import GeofenceMap from './GeofenceMap.jsx'
 
 const getStoredUser = () => {
 	try {
@@ -38,9 +37,8 @@ const CitizenDashboard = () => {
 		if (savedDate && savedDate > getLocalDate()) return { mode: 'scheduled', message: `Campus arrival checks are scheduled for ${savedDate}.` }
 		return { mode: 'idle', message: '' }
 	})
-	const [gpsMapData, setGpsMapData] = useState({ location: null, geofences: [] })
+	const [geofenceMapData, setGeofenceMapData] = useState({ location: null, geofences: [] })
 	const [selectedGeofenceId, setSelectedGeofenceId] = useState('')
-	const [boundaryLoad, setBoundaryLoad] = useState({ loading: true, error: '' })
 	const user = getStoredUser()
 	const navigate = useNavigate()
 	const location = useLocation()
@@ -49,6 +47,31 @@ const CitizenDashboard = () => {
 	const requestInFlightRef = useRef(false)
 	const firstName = user?.name?.trim().split(/\s+/)[0] || 'there'
 	const isServiceRoute = location.pathname.startsWith('/citizen/service/')
+	const refreshGeofenceVisits = async () => {
+		try {
+			const query = new URLSearchParams({ date: getLocalDate() })
+			const result = await queueApiRequest(`/api/queue/geofence/active?${query}`)
+			const geofences = result.geofences || []
+			setGeofenceMapData((current) => ({
+				location: geofences.length ? current.location : null,
+				geofences,
+			}))
+			setSelectedGeofenceId((current) => geofences.some((item) => String(item.memberId) === current)
+				? current
+				: String(geofences[0]?.memberId || ''))
+
+			if (!geofences.length) {
+				sessionStorage.removeItem('qmate.geofence.date')
+				setTrackingDate(null)
+				setGeofenceState({ mode: 'idle', message: '' })
+				return
+			}
+
+			setTrackingDate(getLocalDate())
+		} catch (error) {
+			setGeofenceState({ mode: 'error', message: error.message })
+		}
+	}
 
 	useEffect(() => {
 		let active = true
@@ -58,17 +81,16 @@ const CitizenDashboard = () => {
 			.then((result) => {
 				if (!active) return
 				const geofences = result.geofences || []
-				setGpsMapData((current) => ({ ...current, geofences }))
+				setGeofenceMapData((current) => ({ ...current, geofences }))
 				setSelectedGeofenceId((current) => geofences.some((item) => String(item.memberId) === current)
 					? current
 					: String(geofences[0]?.memberId || ''))
-				setBoundaryLoad({ loading: false, error: '' })
 				if (geofences.length) {
 					sessionStorage.setItem('qmate.geofence.date', today)
 					setTrackingDate(today)
 					setGeofenceState(navigator.geolocation
 						? { mode: 'tracking', message: 'Today’s queue visits found. Checking your location against each office boundary.' }
-						: { mode: 'error', message: 'Location is not available in this browser. The office boundaries are shown on the map.' })
+						: { mode: 'error', message: 'Location is not available in this browser. View office boundaries in Service history.' })
 				} else if (trackingDate === today) {
 					sessionStorage.removeItem('qmate.geofence.date')
 					setTrackingDate(null)
@@ -77,7 +99,8 @@ const CitizenDashboard = () => {
 			})
 			.catch((error) => {
 				if (active) {
-					setBoundaryLoad({ loading: false, error: error.message })
+					setGeofenceMapData((current) => ({ ...current, geofences: [] }))
+					setSelectedGeofenceId('')
 					setGeofenceState({ mode: 'error', message: error.message })
 				}
 			})
@@ -94,7 +117,7 @@ const CitizenDashboard = () => {
 				longitude: position.coords.longitude,
 				accuracyMeters: position.coords.accuracy,
 			}
-			setGpsMapData((current) => ({ ...current, location: currentLocation }))
+			setGeofenceMapData((current) => ({ ...current, location: currentLocation }))
 			const now = Date.now()
 			if (requestInFlightRef.current || now - lastFixAtRef.current < 8000) return
 			lastFixAtRef.current = now
@@ -113,13 +136,13 @@ const CitizenDashboard = () => {
 				if (!result.tracking) {
 					sessionStorage.removeItem('qmate.geofence.date')
 					setTrackingDate(null)
-					setGpsMapData({ location: null, geofences: [] })
+					setGeofenceMapData({ location: null, geofences: [] })
 					setSelectedGeofenceId('')
 					setGeofenceState({ mode: 'idle', message: result.message })
 					return
 				}
 				const geofences = result.geofences || []
-				setGpsMapData((current) => ({ location: result.location || currentLocation, geofences: geofences.length ? geofences : current.geofences }))
+				setGeofenceMapData((current) => ({ location: result.location || currentLocation, geofences: geofences.length ? geofences : current.geofences }))
 				setSelectedGeofenceId((current) => geofences.some((item) => String(item.memberId) === current)
 					? current
 					: String(geofences[0]?.memberId || ''))
@@ -130,7 +153,7 @@ const CitizenDashboard = () => {
 				setGeofenceState({ mode: 'tracking', message })
 			} catch (error) {
 				if (error.message.includes('accuracy is too low')) {
-					setGeofenceState({ mode: 'tracking', message: 'GPS accuracy is over 50 m. Waiting for a clearer reading.' })
+					setGeofenceState({ mode: 'tracking', message: 'GPS accuracy is over 90 m. Waiting for a clearer reading.' })
 				} else {
 					setGeofenceState({ mode: 'error', message: error.message })
 				}
@@ -166,7 +189,6 @@ const CitizenDashboard = () => {
 		setGeofenceState(date === getLocalDate()
 			? { mode: 'tracking', message: 'Requesting location permission for today’s campus visits.' }
 			: { mode: 'scheduled', message: `Campus arrival checks are scheduled for ${date}.` })
-		setBoundaryLoad({ loading: true, error: '' })
 		setTrackingDate(date)
 	}
 
@@ -217,8 +239,7 @@ const CitizenDashboard = () => {
 					<span className="user-avatar">{firstName.slice(0, 1).toUpperCase()}</span>
 				</header>
 				{geofenceState.message && <div className={`geofence-banner geofence-banner--${geofenceState.mode}`} role="status"><i className={`fa-solid ${geofenceState.mode === 'error' ? 'fa-triangle-exclamation' : geofenceState.mode === 'tracking' ? 'fa-location-dot' : 'fa-circle-info'}`} aria-hidden="true" /><span>{geofenceState.message}</span>{geofenceState.mode === 'error' && trackingDate && <button type="button" onClick={() => { setTrackingDate(null); window.setTimeout(() => startGeofenceTracking(trackingDate), 0) }}>Retry</button>}</div>}
-				{gpsMapData.geofences.length > 0 && trackingDate === getLocalDate() && <GeofenceMap location={gpsMapData.location} geofences={gpsMapData.geofences} selectedMemberId={selectedGeofenceId} onSelectGeofence={setSelectedGeofenceId} boundaryLoading={boundaryLoad.loading} boundaryError={boundaryLoad.error} />}
-				<main className="dashboard-main"><Outlet context={{ user, firstName, startGeofenceTracking, trackingActive: Boolean(trackingDate) }} /></main>
+				<main className="dashboard-main"><Outlet context={{ user, firstName, startGeofenceTracking, trackingActive: Boolean(trackingDate), geofenceMapData, selectedGeofenceId, setSelectedGeofenceId, refreshGeofenceVisits }} /></main>
 			</div>
 		</div>
 	)

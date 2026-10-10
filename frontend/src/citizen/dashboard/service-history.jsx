@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useOutletContext } from 'react-router-dom'
 import { queueApiRequest } from '../queueApi.js'
+import GeofenceMap from '../GeofenceMap.jsx'
 
 const PAGE_SIZE = 10
 const filters = [
@@ -21,6 +22,7 @@ const statusLabels = {
 }
 
 const ServiceHistory = () => {
+	const { geofenceMapData, selectedGeofenceId, setSelectedGeofenceId, refreshGeofenceVisits } = useOutletContext()
 	const [filter, setFilter] = useState('all')
 	const [page, setPage] = useState(0)
 	const [historyResult, setHistoryResult] = useState({ key: '', items: [], total: 0, error: '' })
@@ -55,9 +57,15 @@ const ServiceHistory = () => {
 	return (
 		<>
 			<div className="dashboard-heading-row history-heading">
-				<div><p className="dashboard-eyebrow"><span /> SERVICES</p><h1>Service history</h1><p className="dashboard-subtitle">Your queue bookings, statuses, and completed visits.</p></div>
+				<div><p className="dashboard-eyebrow"><span /> SERVICES</p><h1>Service history</h1></div>
 				<Link className="history-new-booking" to="/citizen/service/request"><i className="fa-solid fa-plus" aria-hidden="true" /> Request a service</Link>
 			</div>
+			{(geofenceMapData?.geofences?.length > 0 || geofenceMapData?.location) && <GeofenceMap
+				location={geofenceMapData.location}
+				geofences={geofenceMapData.geofences}
+				selectedMemberId={selectedGeofenceId}
+				onSelectGeofence={setSelectedGeofenceId}
+			/>}
 
 			<section className="history-section dashboard-section" aria-label="Service history">
 				<div className="history-toolbar">
@@ -87,7 +95,7 @@ const ServiceHistory = () => {
 					</div>
 				) : (
 					<div className="history-list">
-{items.map((item) => <HistoryItem item={item} key={item.member_id} onExited={() => setReloadKey((key) => key + 1)} />)}
+{items.map((item) => <HistoryItem item={item} key={item.member_id} onExited={() => { setReloadKey((key) => key + 1); refreshGeofenceVisits() }} />)}
 					</div>
 				)}
 

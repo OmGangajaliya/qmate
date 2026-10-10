@@ -94,7 +94,7 @@ const GeofenceMap = ({ location, geofences, selectedMemberId, onSelectGeofence, 
 				weight: 3,
 				fillColor: selectedGeofence?.inside === false ? '#c85e45' : '#31816a',
 				fillOpacity: 1,
-			}).bindPopup(`Your location · ±${Math.round(location.accuracyMeters)} m`).addTo(layers)
+			}).bindPopup('Your current location').addTo(layers)
 			if (!selectedGeofence?.boundary?.length) bounds.push(point)
 		}
 
@@ -119,10 +119,9 @@ const GeofenceMap = ({ location, geofences, selectedMemberId, onSelectGeofence, 
 			<div className="geofence-map-legend" aria-live="polite">
 				<span className={selectedGeofence?.inside === true ? 'geofence-map-status is-inside' : selectedGeofence?.inside === false ? 'geofence-map-status is-outside' : 'geofence-map-status'}>
 					<i className="fa-solid fa-location-dot" aria-hidden="true" />
-					{!location ? 'Waiting for GPS fix' : selectedGeofence?.inside === null ? 'Location acquired; checking boundary' : selectedGeofence?.inside ? 'Inside the boundary' : 'Outside the boundary'}
+					{selectedGeofence?.inside === true ? 'Inside the boundary' : selectedGeofence?.inside === false ? 'Outside the boundary' : 'Boundary status pending'}
 				</span>
 				<span><i className="geofence-legend-boundary" /> Office boundary</span>
-				{location && <span>GPS accuracy ±{Math.round(location.accuracyMeters)} m</span>}
 			</div>
 			<div className="geofence-map-canvas" ref={mapElementRef} role="application" aria-label="Map showing your location and the office geofence" />
 			{boundaryLoading && <p className="geofence-map-message" role="status">Loading the office boundary…</p>}
