@@ -219,7 +219,6 @@ const CitizenDashboard = () => {
 				{geofenceState.message && <div className={`geofence-banner geofence-banner--${geofenceState.mode}`} role="status"><i className={`fa-solid ${geofenceState.mode === 'error' ? 'fa-triangle-exclamation' : geofenceState.mode === 'tracking' ? 'fa-location-dot' : 'fa-circle-info'}`} aria-hidden="true" /><span>{geofenceState.message}</span>{geofenceState.mode === 'error' && trackingDate && <button type="button" onClick={() => { setTrackingDate(null); window.setTimeout(() => startGeofenceTracking(trackingDate), 0) }}>Retry</button>}</div>}
 				{gpsMapData.geofences.length > 0 && trackingDate === getLocalDate() && <GeofenceMap location={gpsMapData.location} geofences={gpsMapData.geofences} selectedMemberId={selectedGeofenceId} onSelectGeofence={setSelectedGeofenceId} boundaryLoading={boundaryLoad.loading} boundaryError={boundaryLoad.error} />}
 				<main className="dashboard-main"><Outlet context={{ user, firstName, startGeofenceTracking, trackingActive: Boolean(trackingDate) }} /></main>
-				<footer className="dashboard-footer"><span>QMate citizen services</span><span><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Your account is private</span></footer>
 			</div>
 		</div>
 	)
