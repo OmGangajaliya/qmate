@@ -88,40 +88,6 @@ router.get('/offices', async (_request, response) => {
 	}
 })
 
-router.post('/offices', async (request, response) => {
-	const name = typeof request.body?.name === 'string' ? request.body.name.trim() : ''
-	const address = typeof request.body?.address === 'string' ? request.body.address.trim() : ''
-	const phone = typeof request.body?.phone === 'string' ? request.body.phone.trim().replace(/[\s()-]/g, '') : ''
-	const openingTime = request.body?.openingTime
-	const closingTime = request.body?.closingTime
-	const bufferMinutes = Number(request.body?.bufferMinutes ?? 0)
-	const geofence = parseGeofence(request.body?.geofencePoint)
-	if (!name || name.length > 180 || !address || phone && !validPhone(phone)
-		|| !timePattern.test(openingTime || '') || !timePattern.test(closingTime || '')
-		|| openingTime >= closingTime || !Number.isInteger(bufferMinutes) || bufferMinutes < 0
-		|| !validateGeofence(geofence)) {
-		return response.status(400).json({ message: 'Enter a valid office name, address, opening hours, buffer, and geofence coordinates.' })
-	}
-
-	try {
-		const { rows } = await pool.query(
-			`INSERT INTO government_office
-			 (gov_name, address, phone, geofence_point, buffer_time_minutes, opening_time, closing_time)
-			 VALUES ($1, $2, $3, $4::jsonb, $5, $6::time, $7::time)
-			 RETURNING gov_id, gov_name, address, phone, geofence_point,
-			           buffer_time_minutes, opening_time, closing_time`,
-			[name, address, phone || null, JSON.stringify(geofence), bufferMinutes, openingTime, closingTime],
-		)
-		return response.status(201).json({ office: rows[0], message: 'Government office created.' })
-	} catch (error) {
-		console.error('Unable to create government office:', error.message)
-		if (error.code === '42703' || error.code === '42701') {
-			return response.status(503).json({ message: 'Office hours are not installed in the database. Apply the government-office opening_time and closing_time migration first.' })
-		}
-		return response.status(500).json({ message: 'Unable to create this government office.' })
-	}
-})
-
 router.put('/offices/:officeId', async (request, response) => {
 	const officeId = Number(request.params.officeId)
 	const name = typeof request.body?.name === 'string' ? request.body.name.trim() : ''
