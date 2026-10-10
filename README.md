@@ -1,95 +1,130 @@
 # QMate
 
-QMate is a proposed queue-management platform for government offices. It replaces crowded, paper-based waiting lines with organized digital queues for individual service counters. Citizens can join the queue for the service they need, while office employees manage that queue and officials monitor service delivery and employee performance from dedicated panels.
+QMate is a queue-management application for government service counters. This repository contains a working React/Vite frontend, an Express API, and a PostgreSQL schema. The product is still under development; this document distinguishes features present in the code from planned work and setup gaps.
 
-## The Problem
+## Current Features
 
-Government offices often run several service counters at once, each with a different purpose and waiting line. Without a shared, live view, citizens may wait without knowing their place or when they will be served, employees have limited tools for handling missed turns, and management has little consistent data about how queues are moving.
+### Citizen panel
 
-## How QMate Works
+- Citizen registration and sign-in with JWT authentication.
+- Browse available counters and services, check queue availability, and join a queue for today or a future date.
+- View service history and filter visits by status.
+- Exit an eligible queue entry; exiting deletes that queue-membership row rather than changing its status to cancelled.
+- Geofence arrival checks for active visits. Location is requested in the browser and evaluated by the backend against office polygon data.
+- View the active office boundary and current location map on Service history. The map loads Leaflet and OpenStreetMap tiles from their public CDNs.
 
-1. An office configures its service counters and assigns employees to manage them.
-2. A citizen selects the required service and joins its counter queue.
-3. Geofencing can be used to confirm that a citizen is at or near the office before marking them as arrived. Arrival rules should be configurable for each office.
-4. The assigned employee calls the next eligible citizen and updates the queue as service progresses.
-5. Live queue changes are shared with the relevant panels over WebSockets.
-6. Higher-level officials review operational and employee performance information across the office or organization.
+### Employee panel
 
-## Planned Features
+- Employee sign-in and a live queue view for the employee's assigned counter.
+- Queue data refreshes by polling the API every 20 seconds; the app does not currently use WebSockets.
+- Call the next eligible arrived customer, start service, and complete service.
+- View active, arrived, serving, waiting, and completed queue metrics.
 
-- **Separate queues by service counter:** Citizens wait in the queue relevant to their requested service, rather than one undifferentiated line.
-- **Geofenced arrival confirmation:** Arrival status can be based on the citizen's location relative to the office, subject to office-configured distance and timing rules.
-- **Live queue updates:** WebSocket communication can keep citizen, employee, and official views synchronized as turns are called and statuses change.
-- **Employee queue controls:** Employees can call the next person, mark a service as in progress or complete, and record exceptions.
-- **No-show and late-arrival handling:** Configurable grace periods, missed-turn statuses, re-queue or skip rules, and employee overrides can help keep the queue moving while treating citizens consistently.
-- **Official monitoring panel:** Authorized officials can review queue activity and service metrics across employees and counters.
-- **Performance reporting:** Potential measures include people served, average waiting and service times, queue volumes, and counter utilization. Metrics should be interpreted in context and made transparent to staff.
-- **Role-based access:** Separate experiences and permissions for citizens, counter employees, office administrators, and higher-level officials.
+### Admin panel
 
-## Benefits
+- Admin sign-in and dedicated routes: `/admin/dashboard`, `/admin/offices`, `/admin/employees`, `/admin/analytics`, and `/admin/reports`.
+- Edit the configured government office, including its hours, buffer, and geofence. The admin panel does not create additional government offices.
+- Capture a four-point office boundary sequentially using browser geolocation, preview the resulting polygon, or edit polygon JSON directly.
+- Create employee accounts and assign a counter when creating each employee.
+- View queue analytics and employee completion reports.
 
-- **Less time spent in physical lines:** Citizens can see queue progress and avoid waiting shoulder-to-shoulder for their turn.
-- **Clearer expectations:** Queue position and status updates make the service process easier to understand.
-- **More consistent queue handling:** Shared rules for arrivals, missed turns, and exceptions reduce ad hoc decisions.
-- **Better use of counter capacity:** Employees can see the next eligible person and respond to delays or counter changes.
-- **Operational visibility:** Managers can identify busy services, bottlenecks, and staffing needs using queue data.
-- **Accountability with context:** Performance information can support coaching and service improvement rather than relying only on anecdotal reports.
-- **A foundation for accessible public service:** Digital queue information can be complemented by in-office assistance and non-digital options for citizens who cannot or do not wish to use a smartphone.
+## Current Limitations and Setup Gaps
+
+- Live updates are not implemented with WebSockets. The employee queue polls every 20 seconds; other screens load data through HTTP requests.
+- Admin accounts cannot be self-registered. There is currently no checked-in admin bootstrap script or documented safe first-admin provisioning command. An administrator account must already exist in `users` with a valid bcrypt password hash and `role = 'admin'` before admin sign-in can work.
+- The checked-in `backend/src/db/migrations/001_add_office_hours.sql` is empty. The admin office editor and queue availability/join routes expect `opening_time` and `closing_time` columns on `government_office`. On an existing database that lacks them, apply the following once using the Render PostgreSQL console or another trusted SQL client:
+
+```sql
+ALTER TABLE government_office
+    ADD COLUMN IF NOT EXISTS opening_time TIME NOT NULL DEFAULT '09:00',
+    ADD COLUMN IF NOT EXISTS closing_time TIME NOT NULL DEFAULT '17:00',
+    ADD COLUMN IF NOT EXISTS buffer_time_minutes INTEGER NOT NULL DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS holiday (
+    holiday_id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users (user_id),
+    "date" DATE NOT NULL,
+    remarks TEXT,
+    day VARCHAR(16),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+```
+
+- `backend/src/db/schema.sql` defines the base schema, including `buffer_time_minutes` and `holiday`, but does not currently define office opening/closing times. Apply the SQL above to an existing database before using booking or office-hours features. Back up production data before applying schema changes.
+- The backend package's `npm test` script is a placeholder and does not run an automated test suite.
+- The admin UI can edit offices already returned by the API but does not provide office creation or deletion. The database schema and API can represent multiple existing offices.
 
 ## Technology
 
-- **Frontend:** React, Vite, GSAP, and Font Awesome
-- **Backend:** Node.js and Express.js
-- **Real-time communication:** WebSockets
-- **Database:** PostgreSQL
-- **Planned hosting:** Vercel for the frontend and Render for the backend
-- **Development assistance:** GitHub Copilot
+- Frontend: React, React Router, Vite, Font Awesome, and CSS.
+- Backend: Node.js, Express, JWT authentication, and PostgreSQL through `pg`.
+- Geofence calculation: Turf boolean point-in-polygon.
+- Maps: Leaflet and OpenStreetMap tiles loaded from CDNs.
+- Hosting target: frontend on Vercel and backend/API plus PostgreSQL on Render.
 
-## Project Status
+## Local Development
 
-Currently under development
+### Database
 
-## Team
-
-- **Om Gangajaliya** - Leader
-- **Nikhil Gangajaliya** - Team Member
-
-## Development Setup
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-Available frontend checks and build commands, run from `frontend/`:
-
-```bash
-npm run lint
-npm run build
-npm run preview
-```
+Create a PostgreSQL database, then run `backend/src/db/schema.sql` against it. If using an existing database, review the schema and apply the office-hours SQL in **Current Limitations and Setup Gaps** as needed.
 
 ### Backend
 
-```bash
+```powershell
 cd backend
 npm install
 npm run dev
 ```
 
-For local development, copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL`, `DB_SSL`, and a random `JWT_SECRET` of at least 32 characters. Set `OFFICE_TIMEZONE` to the IANA timezone used by the government office (defaults to `Asia/Kolkata`) for same-day booking-hour checks. Copy `frontend/.env.example` to `frontend/.env` to configure `VITE_API_URL`; it should point to the backend origin. Keep `.env` files out of version control.
+Copy `backend/.env.example` to `backend/.env`, then configure:
 
-The API checks the database connection before listening and exposes `GET /health` as a database health check. Citizen registration and login are available at `POST /api/auth/register` and `POST /api/auth/login`.
+- `DATABASE_URL`: PostgreSQL connection URL.
+- `DB_SSL`: set `true` when required by the database provider; set `false` for a local database without TLS.
+- `JWT_SECRET`: random secret of at least 32 characters.
+- `OFFICE_TIMEZONE`: IANA time-zone name used for office-local booking rules. Defaults to `Asia/Kolkata`.
+- `CORS_ORIGINS`: comma-separated frontend origins allowed by the API.
+- `PORT`: optional; defaults to `5000`.
 
-### Admin Console
+The API checks PostgreSQL before listening. `GET /health` reports database connectivity.
 
-The administrator console is available at `/admin/auth`. It supports government-office management, employee and counter creation, queue analytics, and employee completion reports. Admin accounts are not self-registered. To provision the first admin, configure `DATABASE_URL`, `ADMIN_NAME`, `ADMIN_PHONE`, and `ADMIN_PASSWORD` in the backend environment, then run `node src/scripts/create-admin.js` from `backend/`. The script refuses to change an existing account and does not print the password.
+### Frontend
 
-The admin office editor requires `opening_time` and `closing_time` columns on `government_office`. If they are not already present in your database, apply this once before using office management:9
+```powershell
+cd frontend
+npm install
+npm run dev
+```
 
-Before enabling citizen queue booking on an existing database, run `backend/src/db/migrations/001_queue_booking_metadata.sql` once against the Render PostgreSQL database. It ensures the office-level `buffer_time_minutes` column exists and creates the employee holiday table used to disable booking on holiday dates.
+In development, the frontend defaults to `http://localhost:5000` when `VITE_API_URL` is unset. For deployment, set `VITE_API_URL` to the backend origin in the frontend build environment.
 
-On Render, add `DATABASE_URL`, `DB_SSL=true`, `JWT_SECRET`, `CORS_ORIGINS`, and `OFFICE_TIMEZONE` to the backend web service. `CORS_ORIGINS` must include the deployed frontend origin. Set the frontend's `VITE_API_URL` to the backend service origin and rebuild/redeploy the frontend after changing it. Use `npm start` as the backend start command.
+Useful frontend commands, run from `frontend/`:
+
+```powershell
+npm run lint
+npm run build
+npm run preview
+```
+
+## Main API Routes
+
+All routes below are mounted under `/api`.
+
+- Authentication: `/auth/register`, `/auth/login`, `/auth/employee/login`, `/auth/admin/login`.
+- Citizen queue: `/queue/counters`, `/queue/counters/:counterId/services`, `/queue/availability`, `/queue/join`, `/queue/history`, `/queue/entries/:memberId`, `/queue/geofence/active`, `/queue/geofence/location`, `/queue/holidays`.
+- Employee operations: `/employee/counters`, `/employee/queue`, `/employee/queue/next`, `/employee/entries/:memberId/start`, `/employee/entries/:memberId/complete`.
+- Admin management: `/admin/offices` (GET and PUT `/admin/offices/:officeId`), `/admin/employees` (GET and POST), `/admin/analytics`, `/admin/reports/employees`, `/admin/config`.
+
+Role-protected endpoints require the corresponding bearer token.
+
+## Planned Work
+
+- WebSocket-based queue updates instead of polling.
+- A supported admin bootstrap/provisioning command.
+- A maintained, versioned database-migration workflow for existing deployments.
+- Broader office administration, including office creation and management of multiple offices.
+- Configurable no-show grace periods and additional queue exception rules.
+
+## Team
+
+- Om Gangajaliya — Lead
+- Nikhil Gangajaliya — Team member
